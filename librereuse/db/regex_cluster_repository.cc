@@ -141,7 +141,6 @@ rereuse::db::RegexClusterRepository::query(const std::shared_ptr<rereuse::query:
     for (const auto &cluster : this->clusters) {
         std::chrono::microseconds test_duration, query_duration;
         bool query_happened = false;
-        // TODO remove the || true
         if (query->test(cluster, &test_duration)) {
             auto results = query->query(cluster, &query_duration);
             query_happened = true;

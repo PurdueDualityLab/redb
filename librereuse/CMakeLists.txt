@@ -9,6 +9,7 @@ add_library(librereuse
         db/pattern_reader.cc db/pattern_reader.h
         db/regex_cluster_repository.cc db/regex_cluster_repository.h
         db/regex_repository.cc db/regex_repository.h
+        db/parallel_regex_cluster_repository.cc db/parallel_regex_cluster_repository.h
         # Query sources
         query/abstract_score.h
         query/base_cluster_query.h

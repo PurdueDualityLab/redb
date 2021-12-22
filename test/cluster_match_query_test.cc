@@ -4,9 +4,8 @@
 
 #include <unordered_set>
 #include <memory>
-#include "librereuse/query/ClusterMatchQuery.h"
-#include "gtest/gtest.h"
-#include "gmock/gmock.h"
+#include <query/cluster_match_query.h>
+#include <gtest/gtest.h>
 
 TEST(ClusterMatchQuery, Query) {
     std::unordered_set<std::string> positive = {"abc", "ABC", "asdfkjslkjdflasdf"};

@@ -18,9 +18,9 @@ namespace rereuse::query {
 
     protected:
         explicit BaseRegexQuery(AbstractScore *score);
-        explicit BaseRegexQuery(std::unique_ptr<AbstractScore> score);
+        explicit BaseRegexQuery(std::shared_ptr<AbstractScore> score);
         virtual ~BaseRegexQuery() = default;
-        std::unique_ptr<AbstractScore> scorer;
+        std::shared_ptr<AbstractScore> scorer;
     };
 }
 

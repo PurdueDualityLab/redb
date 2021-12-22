@@ -5,9 +5,9 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "librereuse/db/Cluster.h"
-#include "librereuse/query/BaseClusterQuery.h"
-#include "librereuse/query/FuzzyClusterQuery.h"
+#include <db/cluster.h>
+#include <query/base_cluster_query.h>
+#include <query/fuzzy_cluster_query.h>
 
 TEST(FuzzyClusterQueryTest, NegatesCluster) {
     std::unordered_set<std::string> positive = {"abc", "ABC", "asdfjasdlfjasdf"};

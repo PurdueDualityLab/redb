@@ -22,14 +22,24 @@ target_link_libraries(
 )
 
 add_executable(
-        stats_test
-        stats_test.cc
+        parallel_regex_cluster_repository_test
+        parallel_regex_cluster_repository_test.cc
 )
 target_link_libraries(
-        cluster_match_query_test
+        parallel_regex_cluster_repository_test
         gtest_main
         librereuse
 )
+
+# add_executable(
+#         stats_test
+#         stats_test.cc
+# )
+# target_link_libraries(
+#         cluster_match_query_test
+#         gtest_main
+#         librereuse
+# )
 
 include(GoogleTest)
 gtest_discover_tests(

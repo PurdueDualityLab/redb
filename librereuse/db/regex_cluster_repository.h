@@ -8,6 +8,7 @@
 #include <iostream>
 #include <memory>
 #include <vector>
+#include <thread>
 #include "cluster.h"
 #include "../query/base_regex_query.h"
 #include "../query/cluster_match_query.h"
@@ -29,12 +30,17 @@ namespace rereuse::db {
 
         const std::vector<std::shared_ptr<Cluster>> &get_clusters();
 
-        std::unordered_set<std::string>
-        query(const std::shared_ptr<rereuse::query::BaseClusterQuery> &query, int *skipped_clusters = nullptr,
-              std::vector<std::chrono::microseconds> *test_times = nullptr,
-              std::vector<std::chrono::microseconds> *query_times = nullptr) const;
+        virtual std::unordered_set<std::string>
+        query(const std::shared_ptr<rereuse::query::BaseClusterQuery> &query) const {
+            return this->query(query, nullptr, nullptr, nullptr);
+        }
 
-    private:
+        virtual std::unordered_set<std::string>
+        query(const std::shared_ptr<rereuse::query::BaseClusterQuery> &query, int *skipped_clusters,
+              std::vector<std::chrono::microseconds> *test_times,
+              std::vector<std::chrono::microseconds> *query_times) const;
+
+    protected:
         int maxClusterSize;
         std::vector<std::shared_ptr<Cluster>> clusters;
     };

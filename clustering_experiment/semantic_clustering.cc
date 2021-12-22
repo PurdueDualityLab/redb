@@ -9,6 +9,7 @@
 #include <nlohmann/json.hpp>
 #include <db/cluster.h>
 #include <db/regex_cluster_repository.h>
+#include <db/parallel_regex_cluster_repository.h>
 
 #include "benchmarking.h"
 #include <util/stats.h>
@@ -169,11 +170,11 @@ void perform_semantic_clustering() {
     auto path = "/home/charlie/Programming/regex-reuse/data/clusterdb-v4.json";
     auto clusters = read_semantic_clusters(path);
     auto randomized_clusters = randomize_clusters(clusters);
-    rereuse::db::RegexClusterRepository semantic_repo;
-    rereuse::db::RegexClusterRepository random_repo;
+    auto semantic_repo = new rereuse::db::RegexClusterRepository();
+    auto random_repo = new rereuse::db::RegexClusterRepository();
     int clusters_added = 0;
     for (auto &cluster : clusters) {
-        bool added = semantic_repo.add_cluster(std::move(cluster));
+        bool added = semantic_repo->add_cluster(std::move(cluster));
         if (!added) {
             std::cerr << "Failed to add cluster " << ++clusters_added << " to semantic database. Compiler ran out of memory" << std::endl;
             exit(1);
@@ -184,7 +185,7 @@ void perform_semantic_clustering() {
 
     clusters_added = 0;
     for (auto &cluster : randomized_clusters) {
-        bool added = random_repo.add_cluster(std::move(cluster));
+        bool added = random_repo->add_cluster(std::move(cluster));
         if (!added) {
             std::cerr << "Failed to add cluster " << ++clusters_added << " to random database. Compiler ran out of memory" << std::endl;
             exit(1);
@@ -193,8 +194,8 @@ void perform_semantic_clustering() {
         }
     }
 
-    std::cout << "semantic cluster: loaded " << semantic_repo.pattern_count() << " patterns into " << semantic_repo.cluster_count() << " clusters" << std::endl;
-    std::cout << "random cluster: loaded " << random_repo.pattern_count() << " patterns into " << random_repo.cluster_count() << " clusters" << std::endl;
+    std::cout << "semantic cluster: loaded " << semantic_repo->pattern_count() << " patterns into " << semantic_repo->cluster_count() << " clusters" << std::endl;
+    std::cout << "random cluster: loaded " << random_repo->pattern_count() << " patterns into " << random_repo->cluster_count() << " clusters" << std::endl;
 
     auto queries = read_queries("/home/charlie/Programming/regex-reuse/data/cluster-queries-v4.1.json");
     std::vector<QueryResults> semantic_results_list;
@@ -293,4 +294,7 @@ void perform_semantic_clustering() {
     if (false) {
         display_verbose_info(semantic_results_list, random_results_list);
     }
+
+    delete semantic_repo;
+    delete random_repo;
 }
