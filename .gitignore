@@ -1,3 +1,6 @@
 
 .idea/
 cmake-build-debug/
+deps/re2
+deps/json
+deps/libmicrohttpd
