@@ -21,7 +21,6 @@ add_library(librereuse
         util/stats.h
         util/is_iterable.h)
 target_link_libraries(librereuse PRIVATE re2::re2 nlohmann_json::nlohmann_json)
-# target_include_directories(librereuse PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(librereuse PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
         $<INSTALL_INTERFACE:include/librereuse>)

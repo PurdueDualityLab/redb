@@ -14,6 +14,9 @@ add_subdirectory(librereuse)
 
 add_subdirectory(clustering_experiment)
 
+# Build a microservice
+add_subdirectory(web)
+
 # add stuff for google test
 include(FetchContent)
 FetchContent_Declare(
