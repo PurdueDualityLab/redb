@@ -1,8 +1,5 @@
 
-# Setup libreuse
-add_subdirectory(db)
-add_subdirectory(query)
-
+# Setup rereuse library
 add_library(librereuse
         # db sources
         db/cluster.cc db/cluster.h
