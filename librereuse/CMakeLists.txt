@@ -1,7 +1,5 @@
 
 # Setup libreuse
-add_subdirectory(db)
-add_subdirectory(query)
 
 add_library(librereuse
         # db sources
