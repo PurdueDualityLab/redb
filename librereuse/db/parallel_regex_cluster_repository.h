@@ -13,14 +13,14 @@
 namespace rereuse::db {
     class ParallelRegexClusterRepository : public rereuse::db::RegexClusterRepository {
     public:
-        explicit ParallelRegexClusterRepository(int processors);
-        explicit ParallelRegexClusterRepository(int processors, int maxClusterSize, const std::string &path);
+        explicit ParallelRegexClusterRepository(unsigned int processors);
+        explicit ParallelRegexClusterRepository(unsigned int processors, int maxClusterSize, const std::string &path);
 
         std::unordered_set<std::string>
         query(const std::shared_ptr<rereuse::query::BaseClusterQuery> &query) const override;
 
     private:
-        int processors;
+        unsigned int processors;
     };
 }
 

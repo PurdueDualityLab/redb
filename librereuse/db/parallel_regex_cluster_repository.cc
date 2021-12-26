@@ -107,12 +107,12 @@ private:
 
 /*----------END HELPER CLASSES------------*/
 
-rereuse::db::ParallelRegexClusterRepository::ParallelRegexClusterRepository(int processors)
+rereuse::db::ParallelRegexClusterRepository::ParallelRegexClusterRepository(unsigned int processors)
 : RegexClusterRepository()
 , processors(processors) {
 }
 
-rereuse::db::ParallelRegexClusterRepository::ParallelRegexClusterRepository(int processors, int maxClusterSize, const std::string &path)
+rereuse::db::ParallelRegexClusterRepository::ParallelRegexClusterRepository(unsigned int processors, int maxClusterSize, const std::string &path)
 : RegexClusterRepository(maxClusterSize, path)
 , processors(processors) {
 }
