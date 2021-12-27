@@ -29,9 +29,8 @@ rereuse::query::ClusterMatchQuery::query(const std::shared_ptr<rereuse::db::Clus
                 std::copy(positive_indices.cbegin(), positive_indices.cend(), std::inserter(matched, matched.begin()));
             } else {
                 // Find the intersection between these indices and the already matched ones
-                std::unordered_set<int> positive_set(positive_indices.cbegin(),  positive_indices.cend());
                 std::unordered_set<int> intersection;
-                std::set_intersection(matched.cbegin(),  matched.cend(), positive_set.cbegin(),  positive_set.cend(), std::inserter(intersection, intersection.begin()));
+                std::set_intersection(matched.cbegin(),  matched.cend(), positive_indices.cbegin(),  positive_indices.cend(), std::inserter(intersection, intersection.begin()));
 
                 // Set the intersection to equal
                 matched = intersection;
@@ -51,14 +50,14 @@ rereuse::query::ClusterMatchQuery::query(const std::shared_ptr<rereuse::db::Clus
      * Switch the roles basically */
     for (const auto &neg : this->negative) {
         std::vector<int> positive_indices;
-        set.Match(neg, &positive_indices);
-
-        /* If an index from matched is in matched_indices, it must be removed */
-        for (auto matched_index = matched.begin(); matched_index != matched.end();) {
-            if (std::count(positive_indices.cbegin(), positive_indices.cend(), *matched_index)) {
-                matched_index = matched.erase(matched_index);
-            } else {
-                matched_index++;
+        if (set.Match(neg, &positive_indices)) {
+            // Something matched, so indices must be removed from matched
+            for (auto matched_index = matched.begin(); matched_index != matched.end();) {
+                if (std::count(positive_indices.cbegin(), positive_indices.cend(), *matched_index)) {
+                    matched_index = matched.erase(matched_index);
+                } else {
+                    matched_index++;
+                }
             }
         }
     }

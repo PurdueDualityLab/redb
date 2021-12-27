@@ -50,7 +50,6 @@ static void handle(struct mg_connection *connection, int ev, void *ev_data, void
         LOG(LL_INFO, ("HTTP request: %s %s", method.c_str(), uri.c_str()));
         if (mg_http_match_uri(http_msg, "/query")) {
             if (method == "POST") {
-                mg_log("Starting to handle query request...");
                 LOG(LL_VERBOSE_DEBUG, ("Starting to handle query request..."));
                 auto repository = (rereuse::db::ParallelRegexClusterRepository *) fn_data;
                 // Get a query from the body
@@ -112,6 +111,9 @@ static void handle(struct mg_connection *connection, int ev, void *ev_data, void
             buffer << err_obj;
             mg_http_reply(connection, 400, "Content-Type: application/json\r\n", buffer.str().c_str());
         }
+        // Flush any logs
+        std::flush(std::cout);
+        std::flush(std::cerr);
     }
 }
 

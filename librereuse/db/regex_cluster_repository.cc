@@ -144,9 +144,8 @@ rereuse::db::RegexClusterRepository::query(const std::shared_ptr<rereuse::query:
         if (query->test(cluster, &test_duration)) {
             auto results = query->query(cluster, &query_duration);
             query_happened = true;
-            for (auto result : results) {
-                combined_results.insert(std::move(result));
-            }
+            // Move all the results to combined results
+            std::move(results.begin(),  results.end(), std::inserter(combined_results, combined_results.begin()));
         } else {
             if (skipped_clusters) {
                 *skipped_clusters += 1;

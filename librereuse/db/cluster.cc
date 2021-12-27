@@ -11,7 +11,7 @@ rereuse::db::Cluster::Cluster(const std::unordered_set<std::string> &patterns)
     auto opts = RE2::Options();
     // opts.set_log_errors(false);
     opts.set_max_mem(1073741824); // 1 GiB of memory
-    this->regex_set = std::make_unique<RE2::Set>(opts, RE2::UNANCHORED);
+    this->regex_set = std::make_unique<RE2::Set>(opts, RE2::ANCHOR_BOTH);
 
     for (const auto &pattern : patterns) {
         std::string error_msg;
@@ -30,7 +30,7 @@ rereuse::db::Cluster::Cluster()
           set_is_compiled(false) {
     auto opts = RE2::Options();
     // opts.set_log_errors(false);
-    this->regex_set = std::make_unique<RE2::Set>(opts, RE2::UNANCHORED);
+    this->regex_set = std::make_unique<RE2::Set>(opts, RE2::ANCHOR_BOTH);
 }
 
 bool rereuse::db::Cluster::add_pattern(const std::string &pattern) {
