@@ -1,0 +1,26 @@
+
+.examples-container {
+
+  // border-width: 1px;
+  // border-style: solid;
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+
+  .header-divider {
+    margin-bottom: 8px;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+
+    textarea {
+      width: 100%;
+    }
+  }
+
+  .add-form-btn {
+    width: 100%;
+  }
+}

@@ -1,0 +1,20 @@
+
+.results-container {
+  border-radius: 16px;
+  padding: 16px;
+
+  .regex-list-item {
+    //background-color: #f0f0f0;
+    margin-bottom: 8px;
+  }
+
+  .regex-text {
+    font-weight: bold;
+  }
+}
+
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}

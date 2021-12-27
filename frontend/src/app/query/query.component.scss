@@ -1,0 +1,22 @@
+
+.query-page {
+  display: flex;
+  justify-content: space-evenly;
+  padding: 32px;
+
+  .query-child-page {
+    width: 45%;
+  }
+
+  .query-inputs-panel {
+    @extend .query-child-page
+  }
+
+  .query-results {
+    @extend .query-child-page
+  }
+
+  .query-button {
+    width: 100%;
+  }
+}

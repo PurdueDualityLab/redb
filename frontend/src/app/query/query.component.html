@@ -1,0 +1,21 @@
+
+<div class="query-page">
+  <div class="query-inputs-panel">
+    <h1>Examples</h1>
+    <div>
+      <app-examples label="positive" [examples]="positiveExamples"></app-examples>
+    </div>
+    <div>
+      <app-examples label="negative" [examples]="negativeExamples"></app-examples>
+    </div>
+    <button mat-raised-button color="primary" class="query-button" (click)="onSubmit()">QUERY</button>
+    <div style="margin-top: 16px">
+      <h4 class="mat-h4">Advanced Features</h4>
+      <mat-checkbox (change)="toggleSetting('ignoreEmpty', $event)">Ignore empty examples</mat-checkbox>
+    </div>
+  </div>
+  <div class="query-results">
+    <h1>Results</h1>
+    <app-results [results]="results$ | async" [isLoading]="loadingResults$ | async"></app-results>
+  </div>
+</div>

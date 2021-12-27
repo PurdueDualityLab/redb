@@ -1,0 +1,15 @@
+
+<div class="examples-container mat-elevation-z4">
+  <h2 class="mat-h2">{{ label | titlecase }}</h2>
+  <mat-divider class="header-divider"></mat-divider>
+  <form>
+    <ng-container *ngFor="let control of controls; index as idx">
+      <mat-form-field appearance="outline">
+        <mat-label>A {{ label | lowercase }} example</mat-label>
+        <textarea matInput [formControl]="control"></textarea>
+        <button matSuffix mat-icon-button (click)="removeControl(idx)"><mat-icon>remove</mat-icon></button>
+      </mat-form-field>
+    </ng-container>
+  </form>
+  <button mat-button (click)="addControl()" class="add-form-btn"><mat-icon>add</mat-icon></button>
+</div>
