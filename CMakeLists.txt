@@ -11,6 +11,10 @@ option(SKIP_EXPERIMENTS "Don't build any experiments" FALSE)
 option(SKIP_TESTS "Don't build any tests" FALSE)
 
 # Add 3rd party dependencies
+if(SKIP_TESTS)
+    # if we skip all tests, then we also want to skip re2 tests
+    set(RE2_BUILD_TESTING OFF)
+endif()
 add_subdirectory(deps)
 
 # Contains librereuse, which is the library with all of the reuse stuff in it

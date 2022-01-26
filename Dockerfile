@@ -2,16 +2,22 @@
 # Start with apache server
 FROM httpd:bullseye
 
-# Install wget so that we can get a good version of cmake
+# Install JUST WGET
 RUN apt-get update
-RUN apt-get -y install wget g++ make libssl-dev
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install g++ make wget libssl-dev
 
 # Get a recent version cmake lol
 WORKDIR /opt
 RUN wget https://github.com/Kitware/CMake/releases/download/v3.22.1/cmake-3.22.1.tar.gz
 RUN tar -xf cmake-3.22.1.tar.gz
 WORKDIR /opt/cmake-3.22.1
-RUN ./bootstrap && make && make install
+# Build the package
+RUN ./bootstrap --parallel=6
+RUN make -j6 
+RUN make install
+
+# Install other stuff we need
+RUN apt-get -y install certbot python3-certbot-apache
 
 # Copy in the stuff that's useful
 ADD deps /srv/redb/deps
@@ -23,11 +29,15 @@ COPY clusterdb-v4.json /srv/redb/
 # Do da build
 WORKDIR /srv/redb/build
 RUN cmake -DSKIP_TESTS=TRUE -DSKIP_EXPERIMENTS=TRUE ..
-RUN make
+RUN make -j6
 
 # Setup the apache config
 COPY server/apache-config.conf /usr/local/apache2/conf/httpd.conf
 COPY server/apache-vhosts.conf /usr/local/apache2/conf/extra/httpd-vhosts.conf
+COPY server/apache-ssl.conf /usr/local/apache2/conf/extra/httpd-ssl.conf
+
+# Setup ssl for apache
+# RUN certbot --apache
 
 # Set environment variable for clusterdb
 ENV CLUSTER_DB_PATH=/srv/redb/clusterdb-v4.json

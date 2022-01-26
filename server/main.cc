@@ -18,6 +18,26 @@ static int interrupted = 0;
 static void handle_signal(int sig) {
     LOG(LL_INFO, ("Encountered signal %d, starting to terminated...", sig));
     interrupted = 1;
+    std::flush(std::cout);
+    std::flush(std::cerr);
+}
+
+static nlohmann::json filter_array_nulls(const nlohmann::json &list) {
+    if (!list.is_array())
+        return list;
+
+    nlohmann::json list_cpy = list;
+
+    // Remove all null values
+    for (auto it = list_cpy.begin(); it != list_cpy.end();) {
+        if (it->is_null()) {
+            it = list_cpy.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    return list_cpy;
 }
 
 static std::shared_ptr<rereuse::query::BaseClusterQuery> read_query_from_body(struct mg_str body_string, unsigned int *err_code) {
@@ -36,8 +56,15 @@ static std::shared_ptr<rereuse::query::BaseClusterQuery> read_query_from_body(st
         *err_code = 2;
         return {}; // Return a null pointer
     }
-    auto positive = body_obj["positive"].get<std::unordered_set<std::string>>();
-    auto negative = body_obj["negative"].get<std::unordered_set<std::string>>();
+
+    // Both must be arrays
+    if (!body_obj["positive"].is_array() || !body_obj["negative"].is_array()) {
+        *err_code = 3;
+        return {};
+    }
+
+    auto positive = filter_array_nulls(body_obj["positive"]).get<std::unordered_set<std::string>>();
+    auto negative = filter_array_nulls(body_obj["negative"]).get<std::unordered_set<std::string>>();
     return std::make_shared<rereuse::query::ClusterMatchQuery>(positive, negative);
 }
 
@@ -47,7 +74,9 @@ static void handle(struct mg_connection *connection, int ev, void *ev_data, void
         auto http_msg = (struct mg_http_message *) ev_data;
         std::string method(http_msg->method.ptr, http_msg->method.len);
         std::string uri(http_msg->uri.ptr, http_msg->uri.len);
+        std::string body(http_msg->body.ptr, http_msg->body.len);
         LOG(LL_INFO, ("HTTP request: %s %s", method.c_str(), uri.c_str()));
+        // LOG(LL_INFO, ("HTTP body:\n%s", body.c_str()));
         if (mg_http_match_uri(http_msg, "/query")) {
             if (method == "POST") {
                 LOG(LL_VERBOSE_DEBUG, ("Starting to handle query request..."));
@@ -63,6 +92,8 @@ static void handle(struct mg_connection *connection, int ev, void *ev_data, void
                         err["message"] = "Could not parse body";
                     } else if (err_code == 2) {
                         err["message"] = "Could not build query object. Must specify both positive and negative examples";
+                    } else if (err_code == 3) {
+                        err["message"] = "Could not build query object. positive and negative must be arrays";
                     } else {
                         err["message"] = "Unexpected error occurred";
                     }
@@ -75,13 +106,21 @@ static void handle(struct mg_connection *connection, int ev, void *ev_data, void
                 // Execute the query on the repository
                 auto results = repository->query(query);
                 // mg_log("Found %lu results", results.size());
-                LOG(LL_VERBOSE_DEBUG, ("Found %lu results", results.size()));
+                LOG(LL_VERBOSE_DEBUG, ("Found %lu results. Truncating to first 100", results.size()));
+                std::unordered_set<std::string> truncated_results;
+                auto end = results.begin();
+                unsigned long items_to_take = std::min<unsigned long>(results.size(), 100);
+                std::advance(end, items_to_take);
+                std::move(results.begin(), end, std::inserter(truncated_results, truncated_results.begin()));
 
                 // Serialize the data
                 nlohmann::json results_obj;
-                results_obj["results"] = results;
+                results_obj["results"] = truncated_results;
+                results_obj["total_results_size"] = results.size();
+                results_obj["truncated_results_size"] = truncated_results.size();
                 std::stringstream results_buffer;
                 results_buffer << results_obj;
+                LOG(LL_INFO, ("Found results: %s\n", results_buffer.str().c_str()));
 
                 // Return the data
                 mg_http_reply(connection, 200, "Content-Type: application/json\r\n", results_buffer.str().c_str());
@@ -111,9 +150,12 @@ static void handle(struct mg_connection *connection, int ev, void *ev_data, void
             buffer << err_obj;
             mg_http_reply(connection, 400, "Content-Type: application/json\r\n", buffer.str().c_str());
         }
+        LOG(LL_DEBUG, ("Finished handling connection"));
         // Flush any logs
         std::flush(std::cout);
         std::flush(std::cerr);
+    } else if (ev == MG_EV_HTTP_CHUNK) {
+        LOG(LL_INFO, ("Encountered chunking event"));
     }
 }
 
@@ -145,10 +187,10 @@ int main(int argc, char **argv) {
 
     // Get connection string
     std::stringstream connection_url;
-    connection_url << "http://localhost:" << args.get_port();
+    connection_url << "http://0.0.0.0:" << args.get_port();
 
     // Setup the server
-    struct mg_mgr manager;
+    mg_mgr manager {};
     mg_log_set("3"); // LOG EVERYTHING!!!!
     mg_mgr_init(&manager);
     LOG(LL_INFO, ("Server starting to listen..."));
