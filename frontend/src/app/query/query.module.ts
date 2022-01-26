@@ -16,6 +16,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { HttpClientModule } from '@angular/common/http';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 
 @NgModule({
@@ -24,19 +25,20 @@ import { HttpClientModule } from '@angular/common/http';
     ExamplesComponent,
     ResultsComponent
   ],
-  imports: [
-    CommonModule,
-    QueryRoutingModule,
-    MatButtonModule,
-    MatDividerModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatIconModule,
-    MatListModule,
-    MatSnackBarModule,
-    MatProgressSpinnerModule,
-    MatCheckboxModule
-  ]
+    imports: [
+        CommonModule,
+        QueryRoutingModule,
+        MatButtonModule,
+        MatDividerModule,
+        ReactiveFormsModule,
+        MatFormFieldModule,
+        MatInputModule,
+        MatIconModule,
+        MatListModule,
+        MatSnackBarModule,
+        MatProgressSpinnerModule,
+        MatCheckboxModule,
+        MatTooltipModule
+    ]
 })
 export class QueryModule { }

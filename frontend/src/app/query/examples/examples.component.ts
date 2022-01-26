@@ -12,6 +12,9 @@ export class ExamplesComponent implements OnInit {
   label: string = '';
 
   @Input()
+  description: string = '';
+
+  @Input()
   examples?: FormArray;
 
   constructor(

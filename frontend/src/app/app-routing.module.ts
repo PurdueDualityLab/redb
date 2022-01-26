@@ -7,10 +7,18 @@ const routes: Routes = [
     loadChildren: () => import('./query/query.module').then(m => m.QueryModule)
   },
   {
+    path: 'error',
+    loadChildren: () => import('./error/error.module').then(m => m.ErrorModule)
+  },
+  {
+    path: 'home',
+    loadChildren: () => import('./home/home.module').then(m => m.HomeModule)
+  },
+  {
     path: '',
     pathMatch: 'full',
-    redirectTo: '/query'
-  }
+    redirectTo: '/home'
+  },
 ];
 
 @NgModule({

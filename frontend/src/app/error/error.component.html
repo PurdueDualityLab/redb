@@ -1,0 +1,14 @@
+
+<div *ngIf="errorState$ | async as errorState" class="error-container">
+  <div class="error-info-box">
+    <h1>{{ errorState.title }}</h1>
+    <p>{{ errorState.message }}</p>
+    <p class="mat-caption">Data:</p>
+    <code>
+      {{ errorState.data | json }}
+    </code>
+  </div>
+  <div class="error-info-box">
+    <a mat-raised-button routerLink="/home" color="primary" class="home-btn">Return Home</a>
+  </div>
+</div>

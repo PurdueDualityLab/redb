@@ -1,3 +1,4 @@
 export const environment = {
-  production: true
+  production: true,
+  queryServiceUrl: 'https://queryapi.regextools.io'
 };

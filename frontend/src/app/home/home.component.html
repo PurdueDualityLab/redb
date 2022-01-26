@@ -1,0 +1,11 @@
+
+<div class="home-container">
+  <h1>RegexTools - tools to help you use regular expressions</h1>
+  <mat-grid-list [cols]="3" gutterSize="8">
+    <mat-grid-tile *ngFor="let tool of tools">
+      <div class="tool-tile-content">
+        <app-tool-card [title]="tool.name" [description]="tool.description" [routeFragment]="tool.routerFragment"></app-tool-card>
+      </div>
+    </mat-grid-tile>
+  </mat-grid-list>
+</div>

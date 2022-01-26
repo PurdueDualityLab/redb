@@ -5,6 +5,7 @@ import { concatMap, map } from 'rxjs/operators';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { QueryService } from './query.service';
 import { Query } from './query.model';
+import { Router } from '@angular/router';
 
 interface Settings {
   ignoreEmpty: boolean;
@@ -33,6 +34,7 @@ export class QueryComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     private readonly queryService: QueryService,
+    private readonly navigationService: Router
   ) { }
 
   ngOnInit(): void {
@@ -48,8 +50,13 @@ export class QueryComponent implements OnInit {
     this.loadingResults$.next(true);
     this.queryService.query(value)
       .subscribe(results => {
-        this.results$.next(results);
-        this.loadingResults$.next(false);
+        if (results) {
+          this.results$.next(results);
+          this.loadingResults$.next(false);
+        } else {
+          // navigate to error page
+          this.navigationService.navigate(['/error']).then();
+        }
       });
   }
 
