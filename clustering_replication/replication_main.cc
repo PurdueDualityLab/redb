@@ -20,6 +20,7 @@ static const struct option program_args[] = {
         { "graph-out", required_argument, nullptr, 'g' },
         { "cluster-out", required_argument, nullptr, 'o' },
         { "patterns-file", required_argument, nullptr, 'P' },
+        { "parallel", required_argument, nullptr, 'j' },
         { "help", no_argument, nullptr, 'h' },
         { nullptr, 0, nullptr, 0 }
 };
@@ -29,6 +30,8 @@ public:
     OptionValues()
     : inflation(1.8)
     , pruning(0)
+    // default to using all available cores. If running on a big computer, specify something else
+    , workers(std::thread::hardware_concurrency())
     {  }
 
     double inflation;
@@ -37,10 +40,11 @@ public:
     std::optional<std::string> cluster_out;
     std::optional<std::string> patterns_file_out;
     std::string corpus_file;
+    unsigned int workers;
 };
 
 static OptionValues read_program_opts(int argc, char **argv) {
-    const char *getopt_str = "p:i:g:o:P:h";
+    const char *getopt_str = "p:i:g:o:P:j:h";
     int c;
     int opt_index;
     OptionValues option_values;
@@ -72,6 +76,10 @@ static OptionValues read_program_opts(int argc, char **argv) {
 
             case 'P':
                 option_values.patterns_file_out = std::string(optarg);
+                break;
+
+            case 'j':
+                option_values.workers = std::stoi(std::string(optarg));
                 break;
 
             default:
@@ -118,7 +126,7 @@ int main(int argc, char **argv) {
 
     // build the similarity table
     MclWrapper mcl_wrapper("/usr/local/bin/mcl");
-    SimilarityTable table(patterns, std::thread::hardware_concurrency());
+    SimilarityTable table(patterns, program_arguments.workers);
     // table.prune(.25);
     table.to_similarity_graph();
     std::string abc_graph;
