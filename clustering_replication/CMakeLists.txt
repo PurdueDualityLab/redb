@@ -7,5 +7,5 @@ add_executable(replication
         rex_similarity_scorer.cc rex_similarity_scorer.h
         ThreadPool.h
         mcl_wrapper.cc mcl_wrapper.h
-        cluster_set.cc cluster_set.h)
+        cluster_set.cc cluster_set.h egret_similarity_scorer.cc egret_similarity_scorer.h)
 target_link_libraries(replication PRIVATE nlohmann_json::nlohmann_json re2::re2)
