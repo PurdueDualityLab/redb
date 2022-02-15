@@ -80,6 +80,8 @@ std::vector<std::string> RexSimilarityScorer::load_strings() {
         strings = nlohmann::json::parse(strings_buffer).get<std::vector<std::string>>();
     } catch (nlohmann::json::parse_error &err) {
         throw std::runtime_error("Error while parsing strings buffer");
+    } catch (nlohmann::json::type_error &type_err) {
+        throw std::runtime_error("Strings could not be loaded because of mismatched types");
     }
 
     munmap(strings_buffer_raw, file_length);

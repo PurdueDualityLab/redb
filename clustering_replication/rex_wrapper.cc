@@ -28,6 +28,7 @@ std::vector<std::string> RexWrapper::generate_strings(const std::string &pattern
         if (ret != 0)
             failed = true;
     };
+
     {
         std::unique_ptr<FILE, std::function<void(FILE*)>> pipe(popen(cmd.str().c_str(), "r"), pclose_wrapper);
         if (!pipe) {
@@ -57,6 +58,9 @@ std::vector<std::string> RexWrapper::generate_strings(const std::string &pattern
     std::vector<std::string> rex_strings;
     std::transform(rex_strings_raw.cbegin(),  rex_strings_raw.cend(), std::back_inserter(rex_strings),
                    [](const std::string &str) -> std::string { return str.substr(1, str.length() - 3); });
+
+    if (rex_strings.empty())
+        throw std::runtime_error("Rex strings is empty");
 
     return rex_strings;
 }
