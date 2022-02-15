@@ -25,7 +25,7 @@ if (NOT SKIP_EXPERIMENTS)
 endif()
 
 # Run code to replicate chapman and stolee semantic clustering
-add_subdirectory(clustering_replication)
+add_subdirectory(clustering)
 
 # Add server subdirectory
 add_subdirectory(server)
