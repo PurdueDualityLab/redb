@@ -12,7 +12,7 @@
 #include <fstream>
 #include <optional>
 #include "base_similarity_scorer.h"
-#include "ThreadPool.h"
+#include "../ThreadPool.h"
 #include "rex_similarity_scorer.h"
 
 class SimilarityTable {

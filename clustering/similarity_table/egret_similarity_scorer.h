@@ -8,7 +8,7 @@
 #include "base_similarity_scorer.h"
 
 #include <unordered_set>
-#include <re2/re2.h>
+#include "re2/re2.h"
 
 class EgretSimilarityScorer: public BaseSimilarityScorer {
 public:

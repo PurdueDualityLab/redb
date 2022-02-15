@@ -2,7 +2,7 @@
 // Created by charlie on 2/9/22.
 //
 
-#include "similarity_table.h"
+#include "similarity_table/similarity_table.h"
 #include "mcl_wrapper.h"
 #include "cluster_set.h"
 

@@ -6,10 +6,10 @@
 #define _REX_SIMILARITY_SCORER_H
 
 #include "base_similarity_scorer.h"
-#include "rex_wrapper.h"
+#include "../rex_wrapper.h"
 
 #include <memory>
-#include <re2/re2.h>
+#include "re2/re2.h"
 
 class RexSimilarityScorer: public BaseSimilarityScorer {
 public:

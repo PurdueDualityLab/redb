@@ -9,7 +9,7 @@
 #include <vector>
 #include <unordered_set>
 #include <ostream>
-#include "similarity_table.h"
+#include "similarity_table/similarity_table.h"
 
 class ClusterSet {
 public:

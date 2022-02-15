@@ -4,9 +4,9 @@
 
 #include "rex_similarity_scorer.h"
 
-#include <nlohmann/json.hpp>
+#include "nlohmann/json.hpp"
 #include <fstream>
-#include <re2/re2.h>
+#include "re2/re2.h"
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
