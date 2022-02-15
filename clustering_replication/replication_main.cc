@@ -43,6 +43,20 @@ public:
     unsigned int workers;
 };
 
+static void display_help() {
+    std::cout << "replication - replicate chapman and stolee clustering results\n";
+    std::cout << "usage: replication [options] [corpus_file.txt]\n";
+    std::cout << "\n";
+    std::cout << "options:\n";
+    std::cout << "-i, --inflation:    set the mcl inflation parameter (default is 1.8)\n";
+    std::cout << "-p, --pruning:      set the mcl pruning parameter (default is off)\n";
+    std::cout << "-g, --graph-out:    path to a file to write out the resulting similarity graph\n";
+    std::cout << "-o, --cluster-out:  path to a file to write the resulting cluster with ids (default is clusters.txt)\n";
+    std::cout << "-P, --patterns-out: file to write the resulting clusters to, ids mapped to patterns\n";
+    std::cout << "-j, --parallel:     how many workers to work with (NOTE: default is all available cores in the computer)\n";
+    std::cout << "-h, --help:         display this help screen" << std::endl;
+}
+
 static OptionValues read_program_opts(int argc, char **argv) {
     const char *getopt_str = "p:i:g:o:P:j:h";
     int c;
@@ -51,8 +65,9 @@ static OptionValues read_program_opts(int argc, char **argv) {
     while ((c = getopt_long(argc, argv, getopt_str, program_args, &opt_index)) != -1) {
         switch (c) {
             case 'h':
-                help = 1;
-                break;
+                // help = 1;
+                display_help();
+                exit(0);
 
             case 'i': {
                 float inflation_value = std::stof(std::string(optarg));
@@ -91,20 +106,6 @@ static OptionValues read_program_opts(int argc, char **argv) {
     option_values.corpus_file = std::string(argv[optind]);
 
     return option_values;
-}
-
-static void display_help() {
-    std::cout << "replication - replicate chapman and stolee clustering results\n";
-    std::cout << "usage: replication [options] [corpus_file.txt]\n";
-    std::cout << "\n";
-    std::cout << "options:\n";
-    std::cout << "-i, --inflation:    set the mcl inflation parameter (default is 1.8)\n";
-    std::cout << "-p, --pruning:      set the mcl pruning parameter (default is off)\n";
-    std::cout << "-g, --graph-out:    path to a file to write out the resulting similarity graph\n";
-    std::cout << "-o, --cluster-out:  path to a file to write the resulting cluster with ids (default is clusters.txt)\n";
-    std::cout << "-P, --patterns-out: file to write the resulting clusters to, ids mapped to patterns\n";
-    std::cout << "-j, --parallel:     how many workers to work with (NOTE: default is all available cores in the computer)\n";
-    std::cout << "-h, --help:         display this help screen" << std::endl;
 }
 
 static std::unordered_map<unsigned long, std::string> read_patterns(const std::string& path) {
