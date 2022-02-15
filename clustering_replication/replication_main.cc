@@ -93,6 +93,20 @@ static OptionValues read_program_opts(int argc, char **argv) {
     return option_values;
 }
 
+static void display_help() {
+    std::cout << "replication - replicate chapman and stolee clustering results\n";
+    std::cout << "usage: replication [options] [corpus_file.txt]\n";
+    std::cout << "\n";
+    std::cout << "options:\n";
+    std::cout << "-i, --inflation:    set the mcl inflation parameter (default is 1.8)\n";
+    std::cout << "-p, --pruning:      set the mcl pruning parameter (default is off)\n";
+    std::cout << "-g, --graph-out:    path to a file to write out the resulting similarity graph\n";
+    std::cout << "-o, --cluster-out:  path to a file to write the resulting cluster with ids (default is clusters.txt)\n";
+    std::cout << "-P, --patterns-out: file to write the resulting clusters to, ids mapped to patterns\n";
+    std::cout << "-j, --parallel:     how many workers to work with (NOTE: default is all available cores in the computer)\n";
+    std::cout << "-h, --help:         display this help screen" << std::endl;
+}
+
 static std::unordered_map<unsigned long, std::string> read_patterns(const std::string& path) {
     std::ifstream pattern_file(path);
     re2::RE2 parser("^(\\d+)\\s+(.*)");
@@ -117,7 +131,7 @@ int main(int argc, char **argv) {
     auto program_arguments = read_program_opts(argc, argv);
 
     if (help) {
-        std::cout << "help!" << std::endl;
+        display_help();
         return 0;
     }
 
