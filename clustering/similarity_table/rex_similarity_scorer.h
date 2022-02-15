@@ -11,6 +11,10 @@
 #include <memory>
 #include "re2/re2.h"
 
+struct RexStringsHasher {
+    std::size_t operator()(const std::vector<std::string> &strings) const;
+};
+
 class RexSimilarityScorer: public BaseSimilarityScorer {
 public:
     RexSimilarityScorer(const std::string &pattern, unsigned long id, const RexWrapper &rex_wrapper);
@@ -23,6 +27,7 @@ private:
     std::vector<std::string> load_strings();
     std::string strings_file_path;
     std::unique_ptr<re2::RE2> regex;
+    std::size_t strings_hash;
 };
 
 

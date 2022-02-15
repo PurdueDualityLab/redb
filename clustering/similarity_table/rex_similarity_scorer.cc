@@ -7,10 +7,34 @@
 #include "nlohmann/json.hpp"
 #include <fstream>
 #include "re2/re2.h"
+#include "../program_options.h"
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <unistd.h>
+#include <iostream>
+
+// Shamelessly stolen from here: https://stackoverflow.com/a/2595226/9421263
+static inline void hash_combine(std::size_t& seed, const std::size_t &added_hash) {
+    seed ^= added_hash + 0x9e3779b9 + (seed<<6) + (seed>>2);
+}
+
+std::size_t RexStringsHasher::operator()(const std::vector<std::string> &strings) const {
+    std::vector<std::size_t> string_hashes(strings.size());
+    std::hash<std::string> string_hasher;
+    for (const auto &str : strings) {
+        string_hashes.push_back(string_hasher(str));
+    }
+
+    // Combine all the hashes
+    std::size_t strings_hash = string_hashes[0];
+    string_hashes.erase(string_hashes.begin());
+    for (const auto &h_val : string_hashes) {
+        hash_combine(strings_hash, h_val);
+    }
+
+    return strings_hash;
+}
 
 RexSimilarityScorer::RexSimilarityScorer(const std::string &pattern, unsigned long id, const RexWrapper &rex_wrapper)
 : BaseSimilarityScorer(pattern, id) {
@@ -21,6 +45,12 @@ RexSimilarityScorer::RexSimilarityScorer(const std::string &pattern, unsigned lo
         strings = rex_wrapper.generate_strings(pattern, 400);
     } catch (std::runtime_error &exe) {
         throw exe;
+    }
+
+    if (ProgramOptions::instance().strict_rex_string_checking) {
+        std::cout << "Strictly checking rex strings" << std::endl;
+        RexStringsHasher rex_strings_hasher;
+        this->strings_hash = rex_strings_hasher(strings);
     }
 
     nlohmann::json strings_obj;
@@ -86,6 +116,12 @@ std::vector<std::string> RexSimilarityScorer::load_strings() {
 
     munmap(strings_buffer_raw, file_length);
     close(strings_file_fd);
+
+    // Check if the strings are the same
+    RexStringsHasher rex_strings_hasher;
+    if (ProgramOptions::instance().strict_rex_string_checking && rex_strings_hasher(strings) != this->strings_hash) {
+        std::cerr << "WARNING: strings loaded did not match the original hash value" << std::endl;
+    }
 
     return strings;
 }

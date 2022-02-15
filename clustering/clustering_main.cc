@@ -5,6 +5,8 @@
 #include "similarity_table/similarity_table.h"
 #include "mcl_wrapper.h"
 #include "cluster_set.h"
+#include "db/pattern_reader.h"
+#include "program_options.h"
 
 #include <iostream>
 #include <unordered_map>
@@ -21,31 +23,15 @@ static const struct option program_args[] = {
         { "cluster-out", required_argument, nullptr, 'o' },
         { "patterns-file", required_argument, nullptr, 'P' },
         { "parallel", required_argument, nullptr, 'j' },
+        {"corpus-type", required_argument, nullptr, 't'},
+        { "strict-string-checking", no_argument, nullptr, '1' },
         { "help", no_argument, nullptr, 'h' },
         { nullptr, 0, nullptr, 0 }
 };
 
-struct OptionValues {
-public:
-    OptionValues()
-    : inflation(1.8)
-    , pruning(0)
-    // default to using all available cores. If running on a big computer, specify something else
-    , workers(std::thread::hardware_concurrency())
-    {  }
-
-    double inflation;
-    double pruning;
-    std::optional<std::string> graph_out;
-    std::optional<std::string> cluster_out;
-    std::optional<std::string> patterns_file_out;
-    std::string corpus_file;
-    unsigned int workers;
-};
-
 static void display_help() {
-    std::cout << "replication - replicate chapman and stolee clustering results\n";
-    std::cout << "usage: replication [options] [corpus_file.txt]\n";
+    std::cout << "clustering - cluster a corpus of regexes into semantic clusters\n";
+    std::cout << "usage: clustering [options] [corpus_file.txt]\n";
     std::cout << "\n";
     std::cout << "options:\n";
     std::cout << "-i, --inflation:    set the mcl inflation parameter (default is 1.8)\n";
@@ -54,14 +40,19 @@ static void display_help() {
     std::cout << "-o, --cluster-out:  path to a file to write the resulting cluster with ids (default is clusters.txt)\n";
     std::cout << "-P, --patterns-out: file to write the resulting clusters to, ids mapped to patterns\n";
     std::cout << "-j, --parallel:     how many workers to work with (NOTE: default is all available cores in the computer)\n";
+    std::cout << "-t, --corpus-type:  how the patterns are represented in the corpus. options are 'objects' or 'pairs'\n"
+              << "                    'objects' are json object per line, each object has a pattern kv-pair.\n"
+              << "                    'pairs' are id, whitespace then pattern. (default)\n";
+    std::cout << '\n';
+    std::cout << "--strict-string-checking: strictly check for corruptions in rex strings when being loaded and unloaded\n";
     std::cout << "-h, --help:         display this help screen" << std::endl;
 }
 
-static OptionValues read_program_opts(int argc, char **argv) {
-    const char *getopt_str = "p:i:g:o:P:j:h";
+static ProgramOptions read_program_opts(int argc, char **argv) {
+    const char *getopt_str = "p:i:g:o:P:j:t:h";
     int c;
     int opt_index;
-    OptionValues option_values;
+    ProgramOptions option_values;
     while ((c = getopt_long(argc, argv, getopt_str, program_args, &opt_index)) != -1) {
         switch (c) {
             case 'h':
@@ -97,39 +88,49 @@ static OptionValues read_program_opts(int argc, char **argv) {
                 option_values.workers = std::stoi(std::string(optarg));
                 break;
 
+            case 't': {
+                std::string option(optarg);
+                if (option == "objects") {
+                    option_values.corpus_type = CorpusType::OBJECTS;
+                } else if (option == "pairs") {
+                    option_values.corpus_type = CorpusType::PAIRS;
+                } else {
+                    throw std::runtime_error("Invalid corpus type");
+                }
+            }
+
+            case '1':
+                option_values.strict_rex_string_checking = true;
+                break;
+
             default:
                 throw std::runtime_error("Unexpected argument");
         }
     }
 
     // get the last positional argument
-    option_values.corpus_file = std::string(argv[optind]);
-
-    return option_values;
-}
-
-static std::unordered_map<unsigned long, std::string> read_patterns(const std::string& path) {
-    std::ifstream pattern_file(path);
-    re2::RE2 parser("^(\\d+)\\s+(.*)");
-    std::string line;
-    std::unordered_map<unsigned long, std::string> patterns;
-    while (std::getline(pattern_file, line)) {
-        unsigned long id;
-        std::string pattern;
-        if (re2::RE2::FullMatch(line, parser, &id, &pattern)) {
-            patterns[id] = pattern;
-        }
+    try {
+        option_values.corpus_file = std::string(argv[optind]);
+    } catch (std::logic_error &logic_err) {
+        throw std::runtime_error("No corpus file provided");
     }
 
-    pattern_file.close();
-
-    return patterns;
+    return option_values;
 }
 
 int main(int argc, char **argv) {
 
     // read arguments
-    auto program_arguments = read_program_opts(argc, argv);
+    ProgramOptions program_arguments {};
+    try {
+        program_arguments = read_program_opts(argc, argv);
+    } catch (std::runtime_error &exe) {
+        std::cerr << "Error while parsing program options: " << exe.what() << std::endl;
+        std::cerr << "Please consult 'clustering --help' for usage help" << std::endl;
+        return 1;
+    }
+
+    ProgramOptions::set_instance(std::move(program_arguments));
 
     if (help) {
         display_help();
@@ -137,30 +138,42 @@ int main(int argc, char **argv) {
     }
 
     // read in all the patterns
-    auto patterns = read_patterns(program_arguments.corpus_file);
+    std::unordered_map<unsigned long, std::string> patterns;
+    if (ProgramOptions::instance().corpus_type == CorpusType::PAIRS)
+        // Load pairs
+        patterns = rereuse::db::read_patterns_id_pairs_path(ProgramOptions::instance().corpus_file);
+    else {
+        // Load objects
+        auto pattern_list = rereuse::db::read_patterns_from_path(ProgramOptions::instance().corpus_file);
+        unsigned long id = 0;
+        for (auto & pattern : pattern_list) {
+            patterns[id++] = std::move(pattern);
+        }
+    }
 
     // build the similarity table
     MclWrapper mcl_wrapper("/usr/local/bin/mcl");
-    SimilarityTable table(patterns, program_arguments.workers);
+    SimilarityTable table(patterns, ProgramOptions::instance().workers);
+    // Next line is optional. This prunes before going to mcl
     // table.prune(.25);
     table.to_similarity_graph();
     std::string abc_graph;
-    if (program_arguments.graph_out)
-         abc_graph = table.to_abc(*program_arguments.graph_out);
+    if (ProgramOptions::instance().graph_out)
+         abc_graph = table.to_abc(*ProgramOptions::instance().graph_out);
     else
         abc_graph = table.to_abc();
 
     std::vector<std::vector<unsigned long>> raw_clusters;
-    if (program_arguments.cluster_out) {
-        raw_clusters = mcl_wrapper.cluster(abc_graph, program_arguments.inflation, *program_arguments.cluster_out);
+    if (ProgramOptions::instance().cluster_out) {
+        raw_clusters = mcl_wrapper.cluster(abc_graph, ProgramOptions::instance().inflation, *ProgramOptions::instance().cluster_out);
     } else {
-        raw_clusters = mcl_wrapper.cluster(abc_graph, program_arguments.inflation);
+        raw_clusters = mcl_wrapper.cluster(abc_graph, ProgramOptions::instance().inflation);
     }
 
     ClusterSet cluster_set(raw_clusters);
     std::cout << cluster_set << std::endl;
-    if (program_arguments.patterns_file_out) {
-        std::ofstream patterns_file(*program_arguments.patterns_file_out);
+    if (ProgramOptions::instance().patterns_file_out) {
+        std::ofstream patterns_file(*ProgramOptions::instance().patterns_file_out);
         cluster_set.write_patterns(table, patterns_file);
         patterns_file.close();
     } else {
