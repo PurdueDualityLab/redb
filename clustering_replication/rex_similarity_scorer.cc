@@ -69,10 +69,18 @@ std::vector<std::string> RexSimilarityScorer::load_strings() {
 
     // Load the strings into data
     char *strings_buffer_raw = static_cast<char *>(mmap(nullptr, file_length, PROT_READ, MAP_PRIVATE, strings_file_fd, 0));
+    if (strings_buffer_raw == MAP_FAILED) {
+        throw std::runtime_error("Failed to map file with errno: " + std::to_string(errno));
+    }
     std::string strings_buffer(strings_buffer_raw, file_length);
 
     // Parse the strings via json
-    auto strings = nlohmann::json::parse(strings_buffer).get<std::vector<std::string>>();
+    std::vector<std::string> strings;
+    try {
+        strings = nlohmann::json::parse(strings_buffer).get<std::vector<std::string>>();
+    } catch (nlohmann::json::parse_error &err) {
+        throw std::runtime_error("Error while parsing strings buffer");
+    }
 
     munmap(strings_buffer_raw, file_length);
     close(strings_file_fd);
