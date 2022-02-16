@@ -34,6 +34,8 @@ public:
             , strict_rex_string_checking(false)
     {  }
 
+    friend std::ostream &operator<<(std::ostream &os, const ProgramOptions &opts);
+
     double inflation;
     double pruning;
     std::optional<std::string> graph_out;
