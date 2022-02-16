@@ -42,7 +42,8 @@ static void display_help() {
     std::cout << "-j, --parallel:     how many workers to work with (NOTE: default is all available cores in the computer)\n";
     std::cout << "-t, --corpus-type:  how the patterns are represented in the corpus. options are 'objects' or 'pairs'\n"
               << "                    'objects' are json object per line, each object has a pattern kv-pair.\n"
-              << "                    'pairs' are id, whitespace then pattern. (default)\n";
+              << "                    'pairs' are id, whitespace then pattern. (default)\n"
+              << "                    'clusters' is a json array of arrays where each subarray is a cluster\n";
     std::cout << '\n';
     std::cout << "--strict-string-checking: strictly check for corruptions in rex strings when being loaded and unloaded\n";
     std::cout << "-h, --help:         display this help screen" << std::endl;
@@ -94,6 +95,8 @@ static ProgramOptions read_program_opts(int argc, char **argv) {
                     option_values.corpus_type = CorpusType::OBJECTS;
                 } else if (option == "pairs") {
                     option_values.corpus_type = CorpusType::PAIRS;
+                } else if (option == "clusters") {
+                    option_values.corpus_type = CorpusType::CLUSTERS;
                 } else {
                     throw std::runtime_error("Invalid corpus type");
                 }
@@ -142,7 +145,15 @@ int main(int argc, char **argv) {
     if (ProgramOptions::instance().corpus_type == CorpusType::PAIRS)
         // Load pairs
         patterns = rereuse::db::read_patterns_id_pairs_path(ProgramOptions::instance().corpus_file);
-    else {
+    else if (ProgramOptions::instance().corpus_type == CorpusType::CLUSTERS) {
+        auto clusters = rereuse::db::read_semantic_clusters(ProgramOptions::instance().corpus_file);
+        unsigned long id = 0;
+        for (auto &cluster : clusters) {
+            for (auto &pattern : cluster->get_patterns()) {
+                patterns[id++] = pattern;
+            }
+        }
+    } else {
         // Load objects
         auto pattern_list = rereuse::db::read_patterns_from_path(ProgramOptions::instance().corpus_file);
         unsigned long id = 0;
@@ -165,9 +176,10 @@ int main(int argc, char **argv) {
 
     std::vector<std::vector<unsigned long>> raw_clusters;
     if (ProgramOptions::instance().cluster_out) {
-        raw_clusters = mcl_wrapper.cluster(abc_graph, ProgramOptions::instance().inflation, *ProgramOptions::instance().cluster_out);
+        raw_clusters = mcl_wrapper.cluster(abc_graph, ProgramOptions::instance().inflation,
+                                           ProgramOptions::instance().pruning, *ProgramOptions::instance().cluster_out);
     } else {
-        raw_clusters = mcl_wrapper.cluster(abc_graph, ProgramOptions::instance().inflation);
+        raw_clusters = mcl_wrapper.cluster(abc_graph, ProgramOptions::instance().inflation, ProgramOptions::instance().pruning);
     }
 
     ClusterSet cluster_set(raw_clusters);

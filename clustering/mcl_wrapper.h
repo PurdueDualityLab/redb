@@ -16,8 +16,8 @@ public:
 
     ~MclWrapper();
 
-    std::vector<std::vector<unsigned long>> cluster(const std::string &abc_file, double inflation);
-    std::vector<std::vector<unsigned long>> cluster(const std::string &abc_file, double inflation, const std::string &clusters_output_file) const;
+    std::vector<std::vector<unsigned long>> cluster(const std::string &abc_file, double inflation, double pruning);
+    std::vector<std::vector<unsigned long>> cluster(const std::string &abc_file, double inflation, double pruning, const std::string &clusters_output_file) const;
 private:
     std::string mcl_path;
     std::string temp_cluster_file;

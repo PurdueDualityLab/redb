@@ -12,6 +12,7 @@
 enum CorpusType {
     OBJECTS, // json object per line, each object has a pattern key-value pair
     PAIRS, // Each line has an id, whitespace, and then patterns
+    CLUSTERS // json array of arrays. Each subarray is a cluster
 };
 
 class ProgramOptions {

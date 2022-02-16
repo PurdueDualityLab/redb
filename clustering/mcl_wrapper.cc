@@ -15,15 +15,24 @@ MclWrapper::~MclWrapper() {
 }
 
 std::vector<std::vector<unsigned long>>
-MclWrapper::cluster(const std::string &abc_file, double inflation) {
+MclWrapper::cluster(const std::string &abc_file, double inflation, double pruning) {
     this->temp_cluster_file = "/tmp/clusters_" + std::to_string(random()) + ".txt";
     this->has_temp_cluster_file = true;
-    return this->cluster(abc_file, inflation, this->temp_cluster_file);
+    return this->cluster(abc_file, inflation, pruning, this->temp_cluster_file);
 }
 
 std::vector<std::vector<unsigned long>>
-MclWrapper::cluster(const std::string &abc_file, double inflation, const std::string &clusters_output_file) const {
-    std::vector<std::string> cmd_fragments = {this->mcl_path, abc_file, "--abc", "-I", std::to_string(inflation), "-o", clusters_output_file};
+MclWrapper::cluster(const std::string &abc_file, double inflation, double pruning, const std::string &clusters_output_file) const {
+    std::vector<std::string> cmd_fragments = {this->mcl_path, abc_file, "--abc", "-I", std::to_string(inflation)};
+    // Conditionally add pruning
+    if (pruning > 0) {
+        cmd_fragments.emplace_back("-p");
+        cmd_fragments.push_back(std::to_string(pruning));
+    }
+    // Add output file
+    cmd_fragments.emplace_back("-o");
+    cmd_fragments.push_back(clusters_output_file);
+
     // join cmd_fragments
     std::stringstream cmd;
     auto it = cmd_fragments.begin();
