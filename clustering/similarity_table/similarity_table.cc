@@ -92,10 +92,12 @@ std::string SimilarityTable::to_abc() {
 std::string SimilarityTable::to_abc(const std::string &abc_graph_output) {
     std::ofstream abc_fstream(abc_graph_output);
 
-    for (int row = 0; row < this->scores.size(); row++) {
-        for (int col = 0; col < this->scores.size(); col++) {
-            if (this->scores[row][col] > 0) {
-                abc_fstream << this->scorers[row]->get_id() << '\t' << this->scorers[col]->get_id() << '\t' << this->scores[row][col] << std::endl;
+    for (int row_idx = 0; row_idx < scores.size(); row_idx++) {
+        auto row = this->scores[row_idx];
+        for (int col_idx = 0; col_idx < row.size(); col_idx++) {
+            double score = row[col_idx];
+            if (score > 0) {
+                abc_fstream << this->scorers[row_idx]->get_id() << '\t' << this->scorers[col_idx]->get_id() << '\t' << score << std::endl;
             }
         }
     }

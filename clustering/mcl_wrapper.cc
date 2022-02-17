@@ -9,6 +9,7 @@
 #include <sstream>
 #include <fstream>
 #include <re2/re2.h>
+#include <variant>
 
 MclWrapper::~MclWrapper() {
     if (this->has_temp_cluster_file)
@@ -24,24 +25,33 @@ MclWrapper::cluster(const std::string &abc_file, double inflation, double prunin
 
 std::vector<std::vector<unsigned long>>
 MclWrapper::cluster(const std::string &abc_file, double inflation, double pruning, const std::string &clusters_output_file) const {
-    std::vector<std::string> cmd_fragments = {this->mcl_path, abc_file, "--abc", "-I", std::to_string(inflation)};
+    // std::vector<std::string> cmd_fragments = {this->mcl_path, abc_file, "--abc", "-I", std::to_string(inflation)};
+    std::vector<std::variant<std::string, double>> cmd_fragments = {this->mcl_path, abc_file, "--abc", "-I", inflation};
     // Conditionally add pruning
-    if (pruning > 0) {
+    if (false && pruning > 0) {
         cmd_fragments.emplace_back("-p");
-        cmd_fragments.push_back(std::to_string(pruning));
+        cmd_fragments.emplace_back(pruning);
     }
     // Add output file
     cmd_fragments.emplace_back("-o");
-    cmd_fragments.push_back(clusters_output_file);
+    cmd_fragments.emplace_back(clusters_output_file);
 
     // join cmd_fragments
     std::stringstream cmd;
     cmd.precision(3); // 0.00 fixed
     auto it = cmd_fragments.begin();
     for (; it != cmd_fragments.end() - 1; ++it) {
-        cmd << *it << ' ';
+        if (it->index() == 0) {
+            cmd << std::get<std::string>(*it) << ' ';
+        } else {
+            cmd << std::get<double>(*it) << ' ';
+        }
     }
-    cmd << *(it);
+    if (it->index() == 0) {
+        cmd << std::get<std::string>(*it);
+    } else {
+        cmd << std::get<double>(*it);
+    }
 
     // Execute the program
     std::cout << "Executing mcl: " << cmd.str() << std::endl;
