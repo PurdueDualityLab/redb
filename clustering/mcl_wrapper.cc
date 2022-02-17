@@ -36,6 +36,7 @@ MclWrapper::cluster(const std::string &abc_file, double inflation, double prunin
 
     // join cmd_fragments
     std::stringstream cmd;
+    cmd.precision(3); // 0.00 fixed
     auto it = cmd_fragments.begin();
     for (; it != cmd_fragments.end() - 1; ++it) {
         cmd << *it << ' ';
