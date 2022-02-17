@@ -166,7 +166,8 @@ int main(int argc, char **argv) {
     MclWrapper mcl_wrapper("/usr/local/bin/mcl");
     SimilarityTable table(patterns, ProgramOptions::instance().workers);
     // Next line is optional. This prunes before going to mcl
-    table.prune(ProgramOptions::instance().pruning);
+    if (ProgramOptions::instance().pruning > 0)
+        table.prune(ProgramOptions::instance().pruning);
     table.to_similarity_graph();
     std::string abc_graph;
     if (ProgramOptions::instance().graph_out)

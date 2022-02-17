@@ -4,6 +4,7 @@
 
 #include "mcl_wrapper.h"
 
+#include <iostream>
 #include <utility>
 #include <sstream>
 #include <fstream>
@@ -42,6 +43,7 @@ MclWrapper::cluster(const std::string &abc_file, double inflation, double prunin
     cmd << *(it);
 
     // Execute the program
+    std::cout << "Executing mcl: " << cmd.str() << std::endl;
     int ret = system(cmd.str().c_str());
     if (ret != 0)
         throw std::runtime_error("Failed to execute mcl. Exit with return value: " + std::to_string(ret));
