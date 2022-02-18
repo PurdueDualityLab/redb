@@ -12,7 +12,7 @@
 
 class EgretSimilarityScorer: public BaseSimilarityScorer {
 public:
-    explicit EgretSimilarityScorer(std::string pattern);
+    explicit EgretSimilarityScorer(std::string pattern, unsigned long id);
     ~EgretSimilarityScorer() override = default;
 
     double score(std::shared_ptr<BaseSimilarityScorer> other_scorer) override;

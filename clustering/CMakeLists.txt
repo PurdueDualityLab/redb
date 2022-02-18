@@ -10,4 +10,4 @@ add_executable(clustering
         cluster_set.cc cluster_set.h
         similarity_table/egret_similarity_scorer.cc
         similarity_table/egret_similarity_scorer.h program_options.cc program_options.h)
-target_link_libraries(clustering PRIVATE librereuse nlohmann_json::nlohmann_json re2::re2)
+target_link_libraries(clustering PRIVATE librereuse nlohmann_json::nlohmann_json re2::re2 egret)
