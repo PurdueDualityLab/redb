@@ -16,6 +16,8 @@ EgretSimilarityScorer::EgretSimilarityScorer(std::string pattern, unsigned long 
 
     // Build out regex
     this->regex = std::make_unique<re2::RE2>(this->pattern);
+    if (!this->regex->ok())
+        throw std::runtime_error("Failed to build regex for scorer");
 
     // See which string belongs where
     for (auto &str : strings) {
