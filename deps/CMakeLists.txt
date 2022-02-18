@@ -23,5 +23,6 @@ add_library(egret
         egret/src/Stats.cpp egret/src/Stats.h
         egret/src/TestGenerator.cpp egret/src/TestGenerator.h
         egret/src/Util.cpp egret/src/Util.h
+        egret/src/NFA.cpp egret/src/NFA.h
         egret/src/egret.cpp egret/src/egret.h)
 target_include_directories(egret PUBLIC egret/src)

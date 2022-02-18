@@ -7,6 +7,7 @@
 #include "cluster_set.h"
 #include "db/pattern_reader.h"
 #include "program_options.h"
+#include "similarity_table/egret_similarity_scorer.h"
 
 #include <iostream>
 #include <unordered_map>
@@ -24,6 +25,7 @@ static const struct option program_args[] = {
         { "patterns-file", required_argument, nullptr, 'P' },
         { "parallel", required_argument, nullptr, 'j' },
         {"corpus-type", required_argument, nullptr, 't'},
+        { "scorer", required_argument, nullptr, 's' },
         { "strict-string-checking", no_argument, nullptr, '1' },
         { "help", no_argument, nullptr, 'h' },
         { nullptr, 0, nullptr, 0 }
@@ -40,6 +42,7 @@ static void display_help() {
     std::cout << "-o, --cluster-out:  path to a file to write the resulting cluster with ids (default is clusters.txt)\n";
     std::cout << "-P, --patterns-out: file to write the resulting clusters to, ids mapped to patterns\n";
     std::cout << "-j, --parallel:     how many workers to work with (NOTE: default is all available cores in the computer)\n";
+    std::cout << "-s, --scorer:       what kind of scorer to use for language approximation. 'rex' (default), 'egret'\n";
     std::cout << "-t, --corpus-type:  how the patterns are represented in the corpus. options are 'objects' or 'pairs'\n"
               << "                    'objects' are json object per line, each object has a pattern kv-pair.\n"
               << "                    'pairs' are id, whitespace then pattern. (default)\n"
@@ -50,7 +53,7 @@ static void display_help() {
 }
 
 static ProgramOptions read_program_opts(int argc, char **argv) {
-    const char *getopt_str = "p:i:g:o:P:j:t:h";
+    const char *getopt_str = "p:i:g:o:P:j:t:s:h";
     int c;
     int opt_index;
     ProgramOptions option_values;
@@ -99,6 +102,17 @@ static ProgramOptions read_program_opts(int argc, char **argv) {
                     option_values.corpus_type = CorpusType::CLUSTERS;
                 } else {
                     throw std::runtime_error("Invalid corpus type");
+                }
+            }
+
+            case 's': {
+                std::string option(optarg);
+                if (option == "egret") {
+                    option_values.scorer_type = ScorerType::EGRET;
+                } else if (option == "rex") {
+                    option_values.scorer_type = ScorerType::REX;
+                } else {
+                    throw std::runtime_error("Invalid scorer type");
                 }
             }
 
@@ -164,7 +178,28 @@ int main(int argc, char **argv) {
 
     // build the similarity table
     MclWrapper mcl_wrapper("/usr/local/bin/mcl");
-    SimilarityTable table(patterns, ProgramOptions::instance().workers);
+    std::function<std::shared_ptr<BaseSimilarityScorer>(unsigned long, std::string)> scorer_constructor;
+    if (ProgramOptions::instance().scorer_type == REX) {
+        RexWrapper rex_wrapper("/home/charlie/Downloads/Rex/Rex.exe", "/usr/bin/wine");
+        scorer_constructor = [rex_wrapper](unsigned long id, const std::string &pattern) {
+            try {
+                return std::shared_ptr<BaseSimilarityScorer>(new RexSimilarityScorer(pattern, id, rex_wrapper));
+            } catch (std::runtime_error &exe) {
+                return std::shared_ptr<BaseSimilarityScorer>();
+            }
+        };
+    } else {
+        scorer_constructor = [](unsigned long id, const std::string &pattern) {
+            try {
+                return std::shared_ptr<BaseSimilarityScorer>(new EgretSimilarityScorer(pattern, id));
+            } catch (std::runtime_error &exe) {
+                // Return null if there is an error
+                return std::shared_ptr<BaseSimilarityScorer>();
+            }
+        };
+    }
+
+    SimilarityTable table(patterns, ProgramOptions::instance().workers, scorer_constructor);
     // Next line is optional. This prunes before going to mcl
     if (ProgramOptions::instance().pruning > 0)
         table.prune(ProgramOptions::instance().pruning);

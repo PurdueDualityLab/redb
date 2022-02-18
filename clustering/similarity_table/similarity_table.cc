@@ -4,22 +4,15 @@
 
 #include "similarity_table.h"
 
-SimilarityTable::SimilarityTable(const std::unordered_map<unsigned long, std::string> &patterns, unsigned int workers)
+SimilarityTable::SimilarityTable(const std::unordered_map<unsigned long, std::string> &patterns,
+                                 unsigned int workers,
+                                 std::function<std::shared_ptr<BaseSimilarityScorer>(unsigned long, std::string)> scorer_constructor)
         : has_temp_abc_file(false) {
-    RexWrapper rex_wrapper("/home/charlie/Downloads/Rex/Rex.exe", "/usr/bin/wine");
+
     ThreadPool thread_pool(workers);
     std::vector<std::future<std::shared_ptr<BaseSimilarityScorer>>> scorer_futures;
     for (const auto &[id, pattern] : patterns) {
-        auto new_score_future = thread_pool.enqueue(
-                [](const std::string &pat, unsigned long pat_id, RexWrapper &rex)
-                {
-                    try {
-                        return std::shared_ptr<BaseSimilarityScorer>(new RexSimilarityScorer(pat, pat_id, rex));
-                    } catch (std::runtime_error &exe) {
-                        return std::shared_ptr<BaseSimilarityScorer>();
-                    }
-                },
-                pattern, id, rex_wrapper);
+        auto new_score_future = thread_pool.enqueue(scorer_constructor, id, pattern);
         scorer_futures.push_back(std::move(new_score_future));
     }
 

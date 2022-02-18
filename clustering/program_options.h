@@ -15,6 +15,11 @@ enum CorpusType {
     CLUSTERS // json array of arrays. Each subarray is a cluster
 };
 
+enum ScorerType {
+    REX, // use rex for string generation
+    EGRET, // use egret for string generation
+};
+
 class ProgramOptions {
 public:
     static const ProgramOptions &instance() {
@@ -32,6 +37,7 @@ public:
             , workers(std::thread::hardware_concurrency())
             , corpus_type(CorpusType::PAIRS)
             , strict_rex_string_checking(false)
+            , scorer_type(ScorerType::REX)
     {  }
 
     friend std::ostream &operator<<(std::ostream &os, const ProgramOptions &opts);
@@ -45,6 +51,7 @@ public:
     unsigned int workers;
     CorpusType corpus_type;
     bool strict_rex_string_checking;
+    ScorerType scorer_type;
 
     static ProgramOptions global_options_instance;
 };

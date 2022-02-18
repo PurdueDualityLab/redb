@@ -31,6 +31,13 @@ std::ostream &operator<<(std::ostream &os, const ProgramOptions &opts) {
     os << '\n';
     os << "Corpus file: " << opts.corpus_type << '\n';
     os << "Workers: " << opts.workers << '\n';
+    os << "Scorer type: ";
+    if (opts.scorer_type == ScorerType::REX) {
+        os << "Rex";
+    } else {
+        os << "Egret";
+    }
+    os << '\n';
     os << "Corpus type: ";
     if (opts.corpus_type == CorpusType::CLUSTERS)
         os << "CLUSTERS";
