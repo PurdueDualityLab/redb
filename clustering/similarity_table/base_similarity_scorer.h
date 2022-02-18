@@ -7,12 +7,16 @@
 
 #include <string>
 #include <memory>
+#include <stdexcept>
 
 class BaseSimilarityScorer {
 protected:
     explicit BaseSimilarityScorer(std::string pattern, unsigned long id = 0)
     : pattern(std::move(pattern))
-    , id(id) {  }
+    , id(id) {
+        if (this->pattern.empty())
+            throw std::runtime_error("Pattern must not be empty");
+    }
 
     virtual ~BaseSimilarityScorer() = default;
 

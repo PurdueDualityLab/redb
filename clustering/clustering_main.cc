@@ -201,8 +201,10 @@ int main(int argc, char **argv) {
 
     SimilarityTable table(patterns, ProgramOptions::instance().workers, scorer_constructor);
     // Next line is optional. This prunes before going to mcl
-    if (ProgramOptions::instance().pruning > 0)
+    if (ProgramOptions::instance().pruning > 0) {
+        std::cout << "Pruning values below " << ProgramOptions::instance().pruning << std::endl;
         table.prune(ProgramOptions::instance().pruning);
+    }
     table.to_similarity_graph();
     std::string abc_graph;
     if (ProgramOptions::instance().graph_out)
