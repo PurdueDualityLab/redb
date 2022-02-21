@@ -229,10 +229,12 @@ int main(int argc, char **argv) {
     }
 
     // Prune anything that's not the top k-edges
+#if 0
     if (ProgramOptions::instance().top_k_edges > 0) {
         std::cout << "Pruning values below the top k edges" << std::endl;
         table.top_k_edges(ProgramOptions::instance().top_k_edges);
     }
+#endif
 
     std::string abc_graph;
     if (ProgramOptions::instance().graph_out)
@@ -243,9 +245,11 @@ int main(int argc, char **argv) {
     std::vector<std::vector<unsigned long>> raw_clusters;
     if (ProgramOptions::instance().cluster_out) {
         raw_clusters = mcl_wrapper.cluster(abc_graph, ProgramOptions::instance().inflation,
-                                           ProgramOptions::instance().pruning, *ProgramOptions::instance().cluster_out);
+                                           ProgramOptions::instance().pruning, ProgramOptions::instance().top_k_edges,
+                                           *ProgramOptions::instance().cluster_out);
     } else {
-        raw_clusters = mcl_wrapper.cluster(abc_graph, ProgramOptions::instance().inflation, ProgramOptions::instance().pruning);
+        raw_clusters = mcl_wrapper.cluster(abc_graph, ProgramOptions::instance().inflation,
+                                           ProgramOptions::instance().pruning, ProgramOptions::instance().top_k_edges);
     }
 
     ClusterSet cluster_set(raw_clusters);
