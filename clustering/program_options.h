@@ -38,6 +38,7 @@ public:
             , corpus_type(CorpusType::PAIRS)
             , strict_rex_string_checking(false)
             , scorer_type(ScorerType::REX)
+            , top_k_edges(0)
     {  }
 
     friend std::ostream &operator<<(std::ostream &os, const ProgramOptions &opts);
@@ -52,6 +53,7 @@ public:
     CorpusType corpus_type;
     bool strict_rex_string_checking;
     ScorerType scorer_type;
+    unsigned int top_k_edges;
 
     static ProgramOptions global_options_instance;
 };

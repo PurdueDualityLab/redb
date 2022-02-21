@@ -25,6 +25,12 @@ public:
     std::string to_abc();
     std::string to_abc(const std::string &abc_graph_output);
     void prune(double threshold);
+    /**
+     * Only keeps the top-k highest edges for a given node
+     * @param edges Number of edges to keep
+     */
+    void top_k_edges(unsigned int edges);
+    std::optional<std::string> get_pattern(unsigned long id) const;
 
     const std::vector<std::vector<double>> &get_scores() const {
         return scores;
@@ -33,8 +39,6 @@ public:
     const std::vector<std::shared_ptr<BaseSimilarityScorer>> &get_scorers() const {
         return scorers;
     }
-
-    std::optional<std::string> get_pattern(unsigned long id) const;
 
 private:
     std::vector<std::vector<double>> scores;

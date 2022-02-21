@@ -27,6 +27,7 @@ static const struct option program_args[] = {
         {"corpus-type", required_argument, nullptr, 't'},
         { "scorer", required_argument, nullptr, 's' },
         { "strict-string-checking", no_argument, nullptr, '1' },
+        { "top-k-edges", required_argument, nullptr, 'k' },
         { "help", no_argument, nullptr, 'h' },
         { nullptr, 0, nullptr, 0 }
 };
@@ -43,6 +44,7 @@ static void display_help() {
     std::cout << "-P, --patterns-out: file to write the resulting clusters to, ids mapped to patterns\n";
     std::cout << "-j, --parallel:     how many workers to work with (NOTE: default is all available cores in the computer)\n";
     std::cout << "-s, --scorer:       what kind of scorer to use for language approximation. 'rex' (default), 'egret'\n";
+    std::cout << "-k, --top-k-edges:  only keep the top k edges\n";
     std::cout << "-t, --corpus-type:  how the patterns are represented in the corpus. options are 'objects' or 'pairs'\n"
               << "                    'objects' are json object per line, each object has a pattern kv-pair.\n"
               << "                    'pairs' are id, whitespace then pattern. (default)\n"
@@ -53,7 +55,7 @@ static void display_help() {
 }
 
 static ProgramOptions read_program_opts(int argc, char **argv) {
-    const char *getopt_str = "p:i:g:o:P:j:t:s:h";
+    const char *getopt_str = "p:i:g:o:P:j:t:s:k:h";
     int c;
     int opt_index;
     ProgramOptions option_values;
@@ -114,6 +116,15 @@ static ProgramOptions read_program_opts(int argc, char **argv) {
                 } else {
                     throw std::runtime_error("Invalid scorer type");
                 }
+            }
+
+            case 'k': {
+                long k_edges = std::stol(std::string(optarg));
+                if (k_edges < 0)
+                    throw std::runtime_error("Edges cannot be negative");
+
+                option_values.top_k_edges = static_cast<unsigned int>(k_edges);
+                break;
             }
 
             case '1':
@@ -205,7 +216,16 @@ int main(int argc, char **argv) {
         std::cout << "Pruning values below " << ProgramOptions::instance().pruning << std::endl;
         table.prune(ProgramOptions::instance().pruning);
     }
+
+    // Create similarity graph
     table.to_similarity_graph();
+
+    // Prune anything that's not the top k-edges
+    if (ProgramOptions::instance().top_k_edges > 0) {
+        std::cout << "Pruning values below the top k edges";
+        table.top_k_edges(ProgramOptions::instance().top_k_edges);
+    }
+
     std::string abc_graph;
     if (ProgramOptions::instance().graph_out)
          abc_graph = table.to_abc(*ProgramOptions::instance().graph_out);
