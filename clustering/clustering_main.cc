@@ -18,6 +18,7 @@
 static int help;
 
 static const struct option program_args[] = {
+        { "spec", required_argument, nullptr, 'f' },
         { "inflation", required_argument, nullptr, 'i' },
         { "pruning", required_argument, nullptr, 'p' },
         { "graph-out", required_argument, nullptr, 'g' },
@@ -37,6 +38,9 @@ static void display_help() {
     std::cout << "usage: clustering [options] [corpus_file.txt]\n";
     std::cout << "\n";
     std::cout << "options:\n";
+    std::cout << "-f, --spec:         sets a spec file definition. The spec file is a json file that contains all of\n"
+                "                     these options. If this file is used, all other specified params will be ignored\n"
+                "                     if overwritten\n";
     std::cout << "-i, --inflation:    set the mcl inflation parameter (default is 1.8)\n";
     std::cout << "-p, --pruning:      set the mcl pruning parameter (default is off)\n";
     std::cout << "-g, --graph-out:    path to a file to write out the resulting similarity graph\n";
@@ -55,7 +59,7 @@ static void display_help() {
 }
 
 static ProgramOptions read_program_opts(int argc, char **argv) {
-    const char *getopt_str = "p:i:g:o:P:j:t:s:k:h";
+    const char *getopt_str = "p:i:g:o:P:j:t:s:k:f:h";
     int c;
     int opt_index;
     ProgramOptions option_values;
@@ -65,6 +69,10 @@ static ProgramOptions read_program_opts(int argc, char **argv) {
                 // help = 1;
                 display_help();
                 exit(0);
+
+            case 'f':
+                option_values.spec_file = std::string(optarg);
+                break;
 
             case 'i': {
                 float inflation_value = std::stof(std::string(optarg));
@@ -160,10 +168,9 @@ int main(int argc, char **argv) {
 
     ProgramOptions::set_instance(std::move(program_arguments));
 
-    if (help) {
-        display_help();
-        return 0;
-    }
+    // Patch from spec file instead
+    if (ProgramOptions::instance().spec_file)
+        ProgramOptions::instance().patch_from_spec_file(*ProgramOptions::instance().spec_file);
 
     // read in all the patterns
     std::unordered_map<unsigned long, std::string> patterns;
@@ -188,10 +195,10 @@ int main(int argc, char **argv) {
     }
 
     // build the similarity table
-    MclWrapper mcl_wrapper("/usr/local/bin/mcl");
+    MclWrapper mcl_wrapper(ProgramOptions::instance().mcl_path);
     std::function<std::shared_ptr<BaseSimilarityScorer>(unsigned long, std::string)> scorer_constructor;
     if (ProgramOptions::instance().scorer_type == REX) {
-        RexWrapper rex_wrapper("/home/charlie/Downloads/Rex/Rex.exe", "/usr/bin/wine");
+        RexWrapper rex_wrapper(ProgramOptions::instance().rex_path, ProgramOptions::instance().wine_path);
         scorer_constructor = [rex_wrapper](unsigned long id, const std::string &pattern) {
             try {
                 return std::shared_ptr<BaseSimilarityScorer>(new RexSimilarityScorer(pattern, id, rex_wrapper));
