@@ -218,18 +218,19 @@ int main(int argc, char **argv) {
     }
 
     SimilarityTable table(patterns, ProgramOptions::instance().workers, scorer_constructor);
+
+    // Create similarity graph
+    table.to_similarity_graph();
+
     // Next line is optional. This prunes before going to mcl
     if (ProgramOptions::instance().pruning > 0) {
         std::cout << "Pruning values below " << ProgramOptions::instance().pruning << std::endl;
         table.prune(ProgramOptions::instance().pruning);
     }
 
-    // Create similarity graph
-    table.to_similarity_graph();
-
     // Prune anything that's not the top k-edges
     if (ProgramOptions::instance().top_k_edges > 0) {
-        std::cout << "Pruning values below the top k edges";
+        std::cout << "Pruning values below the top k edges" << std::endl;
         table.top_k_edges(ProgramOptions::instance().top_k_edges);
     }
 
