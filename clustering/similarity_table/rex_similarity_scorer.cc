@@ -5,7 +5,6 @@
 #include "rex_similarity_scorer.h"
 
 #include "nlohmann/json.hpp"
-#include <fstream>
 #include "re2/re2.h"
 #include "../program_options.h"
 #include <fcntl.h>
@@ -63,8 +62,9 @@ RexSimilarityScorer::RexSimilarityScorer(const std::string &pattern, unsigned lo
     strings_file << strings_obj;
 
     // Build a pattern for this regex
-    this->regex = std::make_unique<re2::RE2>(pattern);
-    if (!this->regex->ok()) {
+    // this->regex = std::make_unique<re2::RE2>(pattern);
+    re2::RE2 test_regex(pattern); // This should get dropped
+    if (!test_regex.ok()) {
         throw std::runtime_error("Regex is not supported by re2");
     }
 }
@@ -75,8 +75,9 @@ double RexSimilarityScorer::score(std::shared_ptr<BaseSimilarityScorer> other_sc
     auto rex_scorer = std::dynamic_pointer_cast<RexSimilarityScorer>(other_scorer);
     double hits = 0;
     auto strings = this->load_strings();
+    re2::RE2 other_regex(other_scorer->get_pattern());
     for (const auto &str : strings) {
-        if (rex_scorer->test_string(str)) {
+        if (re2::RE2::PartialMatch(str, other_regex)) {
             hits++;
         }
     }
@@ -127,9 +128,14 @@ std::vector<std::string> RexSimilarityScorer::load_strings() {
 }
 
 RexSimilarityScorer::~RexSimilarityScorer() {
-    remove(this->strings_file_path.c_str());
+    int ret = unlink(this->strings_file_path.c_str());
+    if (ret < 0) {
+        std::cerr << "Error while deleting strings file: ";
+        perror("unlink");
+    }
 }
 
 bool RexSimilarityScorer::test_string(const std::string &subject) const {
-    return re2::RE2::PartialMatch(subject, *this->regex);
+    re2::RE2 this_regex(this->pattern);
+    return re2::RE2::PartialMatch(subject, this_regex);
 }

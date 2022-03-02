@@ -26,7 +26,7 @@ public:
 private:
     std::vector<std::string> load_strings();
     std::string strings_file_path;
-    std::unique_ptr<re2::RE2> regex;
+    // std::unique_ptr<re2::RE2> regex;
     std::size_t strings_hash;
 };
 
