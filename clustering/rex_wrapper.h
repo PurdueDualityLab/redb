@@ -17,7 +17,7 @@ public:
     : path("/tmp/" + std::to_string(random()) + "regex-file.json")
     , file(this->path)
     {
-        this->file << regex;
+        this->file << regex << std::endl;
     }
 
     ~TempRegexFile() {
