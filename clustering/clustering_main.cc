@@ -113,6 +113,7 @@ static ProgramOptions read_program_opts(int argc, char **argv) {
                 } else {
                     throw std::runtime_error("Invalid corpus type");
                 }
+                break;
             }
 
             case 's': {
@@ -124,6 +125,7 @@ static ProgramOptions read_program_opts(int argc, char **argv) {
                 } else {
                     throw std::runtime_error("Invalid scorer type");
                 }
+                break;
             }
 
             case 'k': {

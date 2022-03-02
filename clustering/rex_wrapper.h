@@ -8,6 +8,39 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <fstream>
+#include <iostream>
+
+class TempRegexFile {
+public:
+    explicit TempRegexFile(const std::string &regex)
+    : path("/tmp/" + std::to_string(random()) + "regex-file.json")
+    , file(this->path)
+    {
+        this->file << regex;
+    }
+
+    ~TempRegexFile() {
+        // Close the file
+        if (this->file.is_open())
+            this->file.close();
+
+        // Remove it
+        int ret = remove(this->path.c_str());
+        if (ret == 0)
+            std::cout << "deleted successfully" << std::endl;
+        else
+            std::cerr << "Failed to delete temp file" << std::endl;
+    }
+
+    const std::string &get_path() const {
+        return path;
+    }
+
+private:
+    std::string path;
+    std::ofstream file;
+};
 
 class RexWrapper {
 public:

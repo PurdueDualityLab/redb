@@ -13,7 +13,9 @@
 
 std::vector<std::string> RexWrapper::generate_strings(const std::string &pattern, unsigned int count) const {
     // Generate the commandline
-    std::vector<std::string> cmd_fragments = {this->wine_path, this->rex_path, "/e:ASCII", "/k:" + std::to_string(count), "'" + pattern + "'"};
+    // Temporary file that holds a single regex. This file will be deleted when the object passes out of scope
+    TempRegexFile pattern_regex_file(pattern);
+    std::vector<std::string> cmd_fragments = {this->wine_path, this->rex_path, "/e:ASCII", "/k:" + std::to_string(count), "/r:" + pattern_regex_file.get_path()};
     std::stringstream cmd;
     for (auto it = cmd_fragments.begin(); it != cmd_fragments.end() - 1; ++it) {
         cmd << *it << " ";
