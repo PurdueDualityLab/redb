@@ -34,27 +34,26 @@ SimilarityTable::SimilarityTable(const std::unordered_map<unsigned long, std::st
     }
 
     // Make a bunch of tasks to compute the similarity matrix
-    std::vector<std::future<std::tuple<size_t, size_t, double>>> scoring_tasks;
+    std::vector<std::future<std::tuple<size_t, std::vector<double>>>> scoring_tasks;
     for (size_t row = 0; row < this->scorers.size(); row++) {
         auto row_scorer = this->scorers[row];
-        for (size_t col = 0; col < this->scorers.size(); col++) {
-            auto col_scorer = this->scorers[col];
-            // Right here, I'm passing everything as a task
-            auto task = thread_pool.enqueue([row, col, row_scorer, col_scorer] {
-                // Compute the score
-                double score = row_scorer->score(col_scorer);
+        auto task = thread_pool.enqueue([row, row_scorer, this] {
+            // Compute the score
+            std::vector<double> row_scores(this->scorers.size());
+            for (unsigned int col = 0; col < this->scorers.size(); col++) {
                 std::cout << "Scored (" << row << ',' << col << ')' << std::endl;
-                return std::tuple<size_t, size_t, double> { row, col, score };
-            });
-            scoring_tasks.push_back(std::move(task));
-        }
+                row_scores[col] = row_scorer->score(this->scorers[col]);
+            }
+            return std::tuple<size_t, std::vector<double>> { row, row_scores };
+        });
+        scoring_tasks.push_back(std::move(task));
     }
 
     // Get all the scores
     for (auto &future : scoring_tasks) {
         future.wait();
-        auto [row, col, score] = future.get();
-        this->scores[row][col] = score;
+        auto [row, row_scores] = future.get();
+        this->scores[row] = std::move(row_scores);
     }
 }
 

@@ -23,8 +23,6 @@ struct AggressiveVectorDeleter {
         vec->shrink_to_fit();
         // Delete the pointer
         delete vec;
-
-        std::cout << "Aggressively deleted" << std::endl;
     }
 };
 
