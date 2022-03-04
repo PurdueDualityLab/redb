@@ -10,6 +10,7 @@
 #include <vector>
 #include <fstream>
 #include <iostream>
+#include <csignal>
 
 class TempRegexFile {
 public:
@@ -26,11 +27,7 @@ public:
             this->file.close();
 
         // Remove it
-        int ret = remove(this->path.c_str());
-        if (ret == 0)
-            std::cout << "deleted successfully" << std::endl;
-        else
-            std::cerr << "Failed to delete temp file" << std::endl;
+        unlink(this->path.c_str());
     }
 
     const std::string &get_path() const {

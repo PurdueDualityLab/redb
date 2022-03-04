@@ -1,4 +1,5 @@
 
+# Define clustering executable - actually clusters stuff
 add_executable(clustering
         clustering_main.cc
         rex_wrapper.cc rex_wrapper.h
@@ -11,3 +12,6 @@ add_executable(clustering
         similarity_table/egret_similarity_scorer.cc
         similarity_table/egret_similarity_scorer.h program_options.cc program_options.h)
 target_link_libraries(clustering PRIVATE librereuse nlohmann_json::nlohmann_json re2::re2 egret)
+
+# define clustering evaluation executable - measures properties of a cluster
+add_subdirectory(evaluation)

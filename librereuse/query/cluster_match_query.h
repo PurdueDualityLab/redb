@@ -11,6 +11,8 @@
 namespace rereuse::query {
     class ClusterMatchQuery : public BaseClusterQuery {
     public:
+        static ClusterMatchQuery from_file(const std::string &path);
+
         explicit ClusterMatchQuery(std::unordered_set<std::string> positive, std::unordered_set<std::string> negative);
 
         /**

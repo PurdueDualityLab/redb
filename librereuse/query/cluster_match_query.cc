@@ -3,9 +3,11 @@
 //
 
 #include "cluster_match_query.h"
+#include "nlohmann/json.hpp"
 
 #include <utility>
 #include <numeric>
+#include <fstream>
 
 rereuse::query::ClusterMatchQuery::ClusterMatchQuery(std::unordered_set<std::string> positive,
                                                      std::unordered_set<std::string> negative)
@@ -128,6 +130,18 @@ double rereuse::query::ClusterMatchQuery::average_negative_size() const {
     int total_size = std::transform_reduce(this->negative.cbegin(),  this->negative.cend(), 0, std::plus<>(),
                                            [&](const std::string &str) -> std::string::size_type { return str.size(); });
     return (double) total_size / (double) this->negative.size();
+}
+
+rereuse::query::ClusterMatchQuery rereuse::query::ClusterMatchQuery::from_file(const std::string &path) {
+
+    nlohmann::json query_obj;
+    std::ifstream query_file(path);
+    query_file >> query_obj;
+
+    auto positive_examples = query_obj.at("positive").get<std::unordered_set<std::string>>();
+    auto negative_examples = query_obj.at("negative").get<std::unordered_set<std::string>>();
+
+    return rereuse::query::ClusterMatchQuery(positive_examples, negative_examples);
 }
 
 
