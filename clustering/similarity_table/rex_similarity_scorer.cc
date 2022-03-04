@@ -73,23 +73,25 @@ double RexSimilarityScorer::score(std::shared_ptr<BaseSimilarityScorer> other_sc
     double hits = 0;
     auto strings = this->load_strings();
     re2::RE2 other_regex(other_scorer->get_pattern());
-    for (const auto &str : strings) {
+    for (const auto &str : *strings) {
         if (re2::RE2::PartialMatch(str, other_regex)) {
             hits++;
         }
     }
 
-    return hits / (double) strings.size();
+    return hits / (double) strings->size();
 }
 
-std::vector<std::string> RexSimilarityScorer::load_strings() {
+std::unique_ptr<std::vector<std::string>, AggressiveVectorDeleter>
+RexSimilarityScorer::load_strings() {
 
     std::ifstream strings_file(this->strings_file_path);
 
     // Parse the strings via json
-    std::vector<std::string> strings;
+    std::vector<std::string> *strings_ptr_raw;
     try {
-        strings = nlohmann::json::parse(strings_file).get<std::vector<std::string>>();
+        auto strings = nlohmann::json::parse(strings_file).get<std::vector<std::string>>();
+        strings_ptr_raw = new std::vector<std::string>(std::move(strings));
     } catch (nlohmann::json::parse_error &err) {
         throw std::runtime_error("Error while parsing strings buffer");
     } catch (nlohmann::json::type_error &type_err) {
@@ -98,11 +100,14 @@ std::vector<std::string> RexSimilarityScorer::load_strings() {
 
     // Check if the strings are the same
     RexStringsHasher rex_strings_hasher;
-    if (ProgramOptions::instance().strict_rex_string_checking && rex_strings_hasher(strings) != this->strings_hash) {
+    if (ProgramOptions::instance().strict_rex_string_checking && rex_strings_hasher(*strings_ptr_raw) != this->strings_hash) {
         std::cerr << "WARNING: strings loaded did not match the original hash value" << std::endl;
     }
 
-    return strings;
+    AggressiveVectorDeleter deleter;
+    std::unique_ptr<std::vector<std::string>, AggressiveVectorDeleter> strings_ptr(strings_ptr_raw, deleter);
+
+    return std::move(strings_ptr);
 }
 
 RexSimilarityScorer::~RexSimilarityScorer() {

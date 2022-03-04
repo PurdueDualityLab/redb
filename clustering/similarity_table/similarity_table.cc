@@ -39,6 +39,7 @@ SimilarityTable::SimilarityTable(const std::unordered_map<unsigned long, std::st
         auto row_scorer = this->scorers[row];
         for (size_t col = 0; col < this->scorers.size(); col++) {
             auto col_scorer = this->scorers[col];
+            // Right here, I'm passing everything as a task
             auto task = thread_pool.enqueue([row, col, row_scorer, col_scorer] {
                 // Compute the score
                 double score = row_scorer->score(col_scorer);
@@ -60,7 +61,7 @@ SimilarityTable::SimilarityTable(const std::unordered_map<unsigned long, std::st
 SimilarityTable::~SimilarityTable() {
     // Try deleting the abc file
     if (has_temp_abc_file)
-        remove(this->abc_file.c_str());
+        unlink(this->abc_file.c_str());
 }
 
 void SimilarityTable::to_similarity_graph() {
