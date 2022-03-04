@@ -19,6 +19,10 @@ static double average_times(const std::vector<DurationT> &durations) {
     std::vector<unsigned long> counts;
     std::transform(durations.cbegin(), durations.cend(), std::back_inserter(counts), [](const DurationT &duration) { return duration.count(); });
 
+    // Remove any outliers because the first execution of re2 is super long, so test will always be much longer
+    // than query because test always happens first
+    rereuse::util::remove_outliers(counts);
+
     return rereuse::util::mean(counts.begin(), counts.end());
 }
 
