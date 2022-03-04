@@ -7,9 +7,6 @@
 #include "nlohmann/json.hpp"
 #include "re2/re2.h"
 #include "../program_options.h"
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
 #include <unistd.h>
 #include <iostream>
 
@@ -86,37 +83,18 @@ double RexSimilarityScorer::score(std::shared_ptr<BaseSimilarityScorer> other_sc
 }
 
 std::vector<std::string> RexSimilarityScorer::load_strings() {
-    int strings_file_fd = open(this->strings_file_path.c_str(), O_RDONLY);
-    if (strings_file_fd < 0) {
-        throw std::runtime_error("Could not read strings file");
-    }
 
-    struct stat strings_file_stats;
-    if (fstat(strings_file_fd, &strings_file_stats) == -1) {
-        throw std::runtime_error("Could not stat strings file");
-    }
-
-    size_t file_length = strings_file_stats.st_size;
-
-    // Load the strings into data
-    char *strings_buffer_raw = static_cast<char *>(mmap(nullptr, file_length, PROT_READ, MAP_PRIVATE, strings_file_fd, 0));
-    if (strings_buffer_raw == MAP_FAILED) {
-        throw std::runtime_error("Failed to map file with errno: " + std::to_string(errno));
-    }
-    std::string strings_buffer(strings_buffer_raw, file_length);
+    std::ifstream strings_file(this->strings_file_path);
 
     // Parse the strings via json
     std::vector<std::string> strings;
     try {
-        strings = nlohmann::json::parse(strings_buffer).get<std::vector<std::string>>();
+        strings = nlohmann::json::parse(strings_file).get<std::vector<std::string>>();
     } catch (nlohmann::json::parse_error &err) {
         throw std::runtime_error("Error while parsing strings buffer");
     } catch (nlohmann::json::type_error &type_err) {
         throw std::runtime_error("Strings could not be loaded because of mismatched types");
     }
-
-    munmap(strings_buffer_raw, file_length);
-    close(strings_file_fd);
 
     // Check if the strings are the same
     RexStringsHasher rex_strings_hasher;
