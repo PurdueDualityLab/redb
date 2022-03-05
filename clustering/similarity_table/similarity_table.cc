@@ -3,12 +3,13 @@
 //
 
 #include "similarity_table.h"
+#include "table_scorer.h"
 
 #include <queue>
 
 SimilarityTable::SimilarityTable(const std::unordered_map<unsigned long, std::string> &patterns,
                                  unsigned int workers,
-                                 std::function<std::shared_ptr<BaseSimilarityScorer>(unsigned long, std::string)> scorer_constructor)
+                                 const std::function<std::shared_ptr<BaseSimilarityScorer>(unsigned long, std::string)>& scorer_constructor)
         : has_temp_abc_file(false) {
 
     ThreadPool thread_pool(workers);
@@ -27,12 +28,9 @@ SimilarityTable::SimilarityTable(const std::unordered_map<unsigned long, std::st
     }
     std::cout << "Created " << this->scorers.size() << " scorers" << std::endl;
 
-    // Now compute the similarity matrix
-    this->scores = std::vector<std::vector<double>>(this->scorers.size());
-    for (size_t row = 0; row < this->scorers.size(); row++) {
-        this->scores[row] = std::vector<double>(this->scorers.size());
-    }
-
+    // TODO rework this so that we don't create all of the tasks at once. Instead, we should enqueue
+    // tasks on demand
+    /* Leave this is until we verify that the new way works...
     // Make a bunch of tasks to compute the similarity matrix
     std::vector<std::future<std::tuple<size_t, std::vector<double>>>> scoring_tasks;
     for (size_t row = 0; row < this->scorers.size(); row++) {
@@ -55,6 +53,11 @@ SimilarityTable::SimilarityTable(const std::unordered_map<unsigned long, std::st
         auto [row, row_scores] = future.get();
         this->scores[row] = std::move(row_scores);
     }
+     */
+    // Score the similarity table
+    TableScorer table_scorer(thread_pool, this->scorers);
+    auto scored_table = table_scorer.score();
+    this->scores = std::move(scored_table);
 }
 
 SimilarityTable::~SimilarityTable() {

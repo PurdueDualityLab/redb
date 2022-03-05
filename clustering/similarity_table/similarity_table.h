@@ -18,7 +18,7 @@
 class SimilarityTable {
 public:
     explicit SimilarityTable(const std::unordered_map<unsigned long, std::string> &patterns, unsigned int workers,
-                             std::function<std::shared_ptr<BaseSimilarityScorer>(unsigned long, std::string)> scorer_constructor);
+                             const std::function<std::shared_ptr<BaseSimilarityScorer>(unsigned long, std::string)>& scorer_constructor);
     ~SimilarityTable();
 
     void to_similarity_graph();

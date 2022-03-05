@@ -10,7 +10,9 @@ add_executable(clustering
         mcl_wrapper.cc mcl_wrapper.h
         cluster_set.cc cluster_set.h
         similarity_table/egret_similarity_scorer.cc
-        similarity_table/egret_similarity_scorer.h program_options.cc program_options.h)
+        similarity_table/egret_similarity_scorer.h
+        program_options.cc program_options.h
+        similarity_table/table_scorer.cc similarity_table/table_scorer.h)
 target_link_libraries(clustering PRIVATE librereuse nlohmann_json::nlohmann_json re2::re2 egret)
 
 # define clustering evaluation executable - measures properties of a cluster

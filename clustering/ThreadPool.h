@@ -17,11 +17,14 @@
 
 class ThreadPool {
 public:
-    ThreadPool(size_t);
+    explicit ThreadPool(size_t);
     template<class F, class... Args>
     auto enqueue(F&& f, Args&&... args)
     -> std::future<typename std::result_of<F(Args...)>::type>;
     ~ThreadPool();
+
+    inline size_t thread_count() const noexcept;
+
 private:
     // need to keep track of threads so we can join them
     std::vector< std::thread > workers;
@@ -32,11 +35,14 @@ private:
     std::mutex queue_mutex;
     std::condition_variable condition;
     bool stop;
+
+    size_t threads;
 };
 
 // the constructor just launches some amount of workers
 inline ThreadPool::ThreadPool(size_t threads)
         :   stop(false)
+        ,   threads(threads)
 {
     for(size_t i = 0;i<threads;++i)
         workers.emplace_back(
@@ -97,6 +103,10 @@ inline ThreadPool::~ThreadPool()
     condition.notify_all();
     for(std::thread &worker: workers)
         worker.join();
+}
+
+inline size_t ThreadPool::thread_count() const noexcept {
+    return this->threads;
 }
 
 #endif //_THREADPOOL_H
