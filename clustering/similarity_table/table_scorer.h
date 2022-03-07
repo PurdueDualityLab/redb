@@ -25,6 +25,7 @@ public:
 private:
     ThreadPool &thread_pool;
     const std::vector<std::shared_ptr<BaseSimilarityScorer>> &scorers;
+    unsigned long rows_scored;
 };
 
 

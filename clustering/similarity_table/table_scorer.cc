@@ -10,7 +10,8 @@ using namespace std::chrono_literals;
 
 TableScorer::TableScorer(ThreadPool &thread_pool, const std::vector<std::shared_ptr<BaseSimilarityScorer>> &scorers)
 : thread_pool(thread_pool)
-, scorers(scorers) {
+, scorers(scorers)
+, rows_scored(0) {
 }
 
 template <typename R>
@@ -52,6 +53,9 @@ std::vector<std::vector<double>> TableScorer::score() {
             auto [scored_row, scores] = tasks[ready_task].get();
             table[scored_row] = std::move(scores);
 
+            // A row has been scored, update accordingly
+            std::cout << "Scored " << ++this->rows_scored << "/" << this->scorers.size() << " rows" << std::endl;
+
             // Remove that task and slide everything down
             auto ready_task_loc = tasks.begin() + ready_task;
             tasks.erase(ready_task_loc);
@@ -64,7 +68,6 @@ std::vector<std::vector<double>> TableScorer::score() {
             // Score everything in the row
             for (unsigned int col = 0; col < all_scorers.size(); col++) {
                 row_scores[col] = row_scorer->score(all_scorers[col]);
-                std::cout << "Scored (" << row << ',' << col << ")" << std::endl;
             }
 
             return std::make_tuple(row, row_scores);
