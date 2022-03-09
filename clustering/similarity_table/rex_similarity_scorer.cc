@@ -60,11 +60,14 @@ RexSimilarityScorer::RexSimilarityScorer(const std::string &pattern, unsigned lo
     this->strings_file_path = "/tmp/rex_strings" + std::to_string(random()) + ".json";
     std::ofstream strings_file(this->strings_file_path);
     strings_file << strings_obj;
+    strings_file.close();
 
     // Build a pattern for this regex
     // this->regex = std::make_unique<re2::RE2>(pattern);
     re2::RE2 test_regex(pattern); // This should get dropped
     if (!test_regex.ok()) {
+        // This one is going to be invalid
+        unlink(this->strings_file_path.c_str());
         throw std::runtime_error("Regex is not supported by re2");
     }
 }
