@@ -26,17 +26,6 @@ static double average_times(const std::vector<DurationT> &durations) {
     return rereuse::util::mean(counts.begin(), counts.end());
 }
 
-static void display_results(std::ostream &output, unsigned long report_id, size_t results, unsigned long duration,
-                            int skipped, double average_test, double average_query) {
-    output << "Report " << report_id << ":\n";
-    output << "Num results: " << results << '\n';
-    output << "Total duration: " << duration << "ms\n";
-    output << "Skipped clusters: " << skipped << '\n';
-    output << "Average test time: " << average_test << "us\n";
-    output << "Average query time: " << average_query << "us\n";
-    output << std::endl;
-}
-
 int main(int argc, char **argv) {
 
     // Parse args
@@ -81,7 +70,21 @@ int main(int argc, char **argv) {
         double average_query_time = average_times(query_times);
 
         // Report measurements to user, optionally write to file
-        display_results(std::cout, rep, results.size(), duration.count(), skipped, average_test_time, average_query_time);
+        std::cout << "Report " << rep << ":\n";
+        std::cout << "Num results: " << results.size() << '\n';
+        std::cout << "Total duration: " << duration.count() << "ms\n";
+        std::cout << "Skipped clusters: " << skipped << '\n';
+        std::cout << "Average test time: " << average_test_time << "us\n";
+        std::cout << "Average query time: " << average_query_time << "us\n";
+        std::cout << std::endl;
+        // Only print the actual results on the last repetition
+        if (args.repetitions - rep == 1) {
+            std::cout << "Hits:\n";
+            for (const auto &pattern: results) {
+                std::cout << '/' << pattern << "/\n";
+            }
+            std::cout << std::endl;
+        }
     }
 
     return 0;
