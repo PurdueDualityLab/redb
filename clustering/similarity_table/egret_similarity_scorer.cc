@@ -3,6 +3,7 @@
 //
 
 #include "egret_similarity_scorer.h"
+#include "egret_filtration.h"
 
 #include <utility>
 
@@ -11,8 +12,19 @@
 EgretSimilarityScorer::EgretSimilarityScorer(std::string pattern, unsigned long id)
 : BaseSimilarityScorer(std::move(pattern), id) {
 
+    // make sure this regex is egret compatible
+    if (!egret_compatible(pattern)) {
+        throw std::runtime_error("Pattern is not egret compatible");
+    }
+
     // Use egret to generate strings
-    auto strings = run_engine(this->pattern, "evil");
+    std::vector<std::string> strings;
+    try {
+        strings = run_engine(this->pattern, "evil");
+    } catch (std::runtime_error &exe) {
+        // Throw up
+        throw std::runtime_error(exe);
+    }
 
     // Build out regex
     this->regex = std::make_unique<re2::RE2>(this->pattern);

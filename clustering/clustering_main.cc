@@ -25,7 +25,7 @@ static const struct option program_args[] = {
         { "cluster-out", required_argument, nullptr, 'o' },
         { "patterns-file", required_argument, nullptr, 'P' },
         { "parallel", required_argument, nullptr, 'j' },
-        {"corpus-type", required_argument, nullptr, 't'},
+        { "corpus-type", required_argument, nullptr, 't'},
         { "scorer", required_argument, nullptr, 's' },
         { "strict-string-checking", no_argument, nullptr, '1' },
         { "top-k-edges", required_argument, nullptr, 'k' },
