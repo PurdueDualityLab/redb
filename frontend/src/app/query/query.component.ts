@@ -6,6 +6,8 @@ import { MatCheckboxChange } from '@angular/material/checkbox';
 import { QueryService } from './query.service';
 import { Query } from './query.model';
 import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { TutorialDialogComponent } from './tutorial-dialog/tutorial-dialog.component';
 
 interface Settings {
   ignoreEmpty: boolean;
@@ -34,7 +36,8 @@ export class QueryComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     private readonly queryService: QueryService,
-    private readonly navigationService: Router
+    private readonly navigationService: Router,
+    private readonly matDialog: MatDialog,
   ) { }
 
   ngOnInit(): void {
@@ -70,5 +73,9 @@ export class QueryComponent implements OnInit {
 
   toggleSetting(settingId: SettingsId, event: MatCheckboxChange) {
     this.settings[settingId] = event.checked;
+  }
+
+  showTutorialDialog(): void {
+    this.matDialog.open(TutorialDialogComponent);
   }
 }

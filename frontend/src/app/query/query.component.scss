@@ -4,6 +4,10 @@
   justify-content: space-evenly;
   padding: 32px;
 
+  .title-box {
+    display: flex;
+  }
+
   .query-child-page {
     width: 45%;
   }
@@ -18,5 +22,9 @@
 
   .query-button {
     width: 100%;
+  }
+
+  .help-btn {
+    margin-left: 16px;
   }
 }

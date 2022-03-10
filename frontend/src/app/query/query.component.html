@@ -1,7 +1,10 @@
 
 <div class="query-page">
   <div class="query-inputs-panel">
-    <h1>Examples</h1>
+    <div class="title-box">
+      <h1>Examples</h1>
+      <button mat-icon-button (click)="showTutorialDialog()" class="help-btn" matTooltip="View help info" matTooltipShowDelay="1000"><mat-icon>help_outline</mat-icon></button>
+    </div>
     <div>
       <app-examples label="positive" description="Examples that a regex should match" [examples]="positiveExamples"></app-examples>
     </div>
