@@ -12,6 +12,8 @@
 #include <db/parallel_regex_cluster_repository.h>
 #include <db/pattern_reader.h>
 #include "args_parser.h"
+#include "endpoint_handler.h"
+#include "query_handler.h"
 
 static int interrupted = 0;
 
@@ -76,80 +78,24 @@ static void handle(struct mg_connection *connection, int ev, void *ev_data, void
         std::string uri(http_msg->uri.ptr, http_msg->uri.len);
         std::string body(http_msg->body.ptr, http_msg->body.len);
         LOG(LL_INFO, ("HTTP request: %s %s", method.c_str(), uri.c_str()));
-        // LOG(LL_INFO, ("HTTP body:\n%s", body.c_str()));
-        if (mg_http_match_uri(http_msg, "/query")) {
-            if (method == "POST") {
-                LOG(LL_VERBOSE_DEBUG, ("Starting to handle query request..."));
-                auto repository = (rereuse::db::ParallelRegexClusterRepository *) fn_data;
-                // Get a query from the body
-                unsigned int err_code = 0;
-                auto query = read_query_from_body(http_msg->body, &err_code);
-                if (!query) {
-                    // Couldn't get the proper query
-                    nlohmann::json err;
-                    err["code"] = 400;
-                    if (err_code == 1) {
-                        err["message"] = "Could not parse body";
-                    } else if (err_code == 2) {
-                        err["message"] = "Could not build query object. Must specify both positive and negative examples";
-                    } else if (err_code == 3) {
-                        err["message"] = "Could not build query object. positive and negative must be arrays";
-                    } else {
-                        err["message"] = "Unexpected error occurred";
-                    }
-                    LOG(LL_ERROR, ("Error while evaluating query: %s", err["message"].get<std::string>().c_str()));
 
-                    mg_http_reply(connection, 400, "Content-Type: application/json\r\n", err.dump().c_str());
-                    return;
-                }
-
-                // Execute the query on the repository
-                auto results = repository->query(query);
-                // mg_log("Found %lu results", results.size());
-                LOG(LL_VERBOSE_DEBUG, ("Found %lu results. Truncating to first 100", results.size()));
-                std::unordered_set<std::string> truncated_results;
-                auto end = results.begin();
-                unsigned long items_to_take = std::min<unsigned long>(results.size(), 100);
-                std::advance(end, items_to_take);
-                std::move(results.begin(), end, std::inserter(truncated_results, truncated_results.begin()));
-
-                // Serialize the data
-                nlohmann::json results_obj;
-                results_obj["results"] = truncated_results;
-                results_obj["total_results_size"] = results.size();
-                results_obj["truncated_results_size"] = truncated_results.size();
-                std::stringstream results_buffer;
-                results_buffer << results_obj;
-                LOG(LL_INFO, ("Found results: %s\n", results_buffer.str().c_str()));
-
-                // Return the data
-                mg_http_reply(connection, 200, "Content-Type: application/json\r\n", results_buffer.str().c_str());
-            } else if (method == "OPTIONS") {
-                // Set a 200
-                std::stringstream header_buffer;
-                header_buffer << "Access-Control-Allow-Origin: *\r" << std::endl;
-                header_buffer << "Access-Control-Allow-Methods: GET, POST\r" << std::endl;
-                header_buffer << "Access-Control-Allow-Headers: Accept, Content-Type, Referer, User-Agent\r" << std::endl;
-                header_buffer << "Access-Control-Max-Age: 86400\r" << std::endl;
-                mg_http_reply(connection, 204, header_buffer.str().c_str(), nullptr);
-            } else {
-                LOG(LL_ERROR, ("Invalid request to endpoint"));
-                nlohmann::json err_obj;
-                err_obj["code"] = 400;
-                err_obj["message"] = "The verb you requested is not handled for this endpoint";
-                std::stringstream buffer;
-                buffer << err_obj;
-                mg_http_reply(connection, 400, "Content-Type: application/json\r\n", buffer.str().c_str());
+        auto endpoints = static_cast<std::unordered_map<std::string, std::unique_ptr<EndpointHandler>>*>(fn_data);
+        for (const auto &[endpoint, handler] : *endpoints) {
+            // see if this handler has what we want
+            if (mg_http_match_uri(http_msg, endpoint.c_str())) {
+                auto response = handler->handle(method, http_msg);
+                response.enqueue(connection);
+                LOG(LL_DEBUG, ("Finished handling connection"));
+                // Flush any logs
+                std::flush(std::cout);
+                std::flush(std::cerr);
+                return;
             }
-        } else {
-            LOG(LL_ERROR, ("Invalid request to endpoint"));
-            nlohmann::json err_obj;
-            err_obj["code"] = 400;
-            err_obj["message"] = "The endpoint you requested is not mapped";
-            std::stringstream buffer;
-            buffer << err_obj;
-            mg_http_reply(connection, 400, "Content-Type: application/json\r\n", buffer.str().c_str());
         }
+
+        // We didn't have a valid endpoint handler
+        LOG(LL_ERROR, ("Invalid request to endpoint"));
+        HttpResponse::invalid_endpoint_mapping().enqueue(connection);
         LOG(LL_DEBUG, ("Finished handling connection"));
         // Flush any logs
         std::flush(std::cout);
@@ -185,6 +131,10 @@ int main(int argc, char **argv) {
     }
     LOG(LL_INFO, ("Repository initialized"));
 
+    // Set up endpoint handlers
+    auto *endpoint_mappings = new std::unordered_map<std::string, std::unique_ptr<EndpointHandler>>();
+    (*endpoint_mappings)["/query"] = std::make_unique<QueryHandler>(repository);
+
     // Get connection string
     std::stringstream connection_url;
     connection_url << "http://0.0.0.0:" << args.get_port();
@@ -194,7 +144,7 @@ int main(int argc, char **argv) {
     mg_log_set("3"); // LOG EVERYTHING!!!!
     mg_mgr_init(&manager);
     LOG(LL_INFO, ("Server starting to listen..."));
-    mg_http_listen(&manager, connection_url.str().c_str(), &handle, (void *) repository);
+    mg_http_listen(&manager, connection_url.str().c_str(), &handle, (void *) endpoint_mappings);
     LOG(LL_INFO, ("Server started on port %d", args.get_port()));
     // Flush the buffers...
     std::flush(std::cout);
@@ -202,6 +152,6 @@ int main(int argc, char **argv) {
     while (!interrupted)
         mg_mgr_poll(&manager, 1000);
     mg_mgr_free(&manager);
-    delete repository;
+    delete endpoint_mappings;
     return 0;
 }

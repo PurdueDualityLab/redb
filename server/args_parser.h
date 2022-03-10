@@ -20,6 +20,8 @@ namespace redb::server {
             return db_seed_path;
         }
 
+        static void print_help();
+
     private:
         unsigned short port;
         std::string db_seed_path;
