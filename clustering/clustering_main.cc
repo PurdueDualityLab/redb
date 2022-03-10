@@ -214,6 +214,8 @@ int main(int argc, char **argv) {
                 return std::shared_ptr<BaseSimilarityScorer>(new EgretSimilarityScorer(pattern, id));
             } catch (std::runtime_error &exe) {
                 // Return null if there is an error
+                std::cerr << "clustering: regex /" << pattern << "/ is not compatible with egret" << std::endl;
+                std::cerr << "msg: " << exe.what() << std::endl;
                 return std::shared_ptr<BaseSimilarityScorer>();
             }
         };
