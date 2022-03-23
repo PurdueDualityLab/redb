@@ -11,9 +11,12 @@
 #include <db/regex_cluster_repository.h>
 #include <db/parallel_regex_cluster_repository.h>
 #include <db/pattern_reader.h>
+#include <aws/core/Aws.h>
+#include <aws/core/auth/AWSCredentialsProvider.h>
 #include "args_parser.h"
 #include "endpoint_handler.h"
 #include "query_handler.h"
+#include "tracker_handler.h"
 
 static int interrupted = 0;
 
@@ -83,6 +86,7 @@ static void handle(struct mg_connection *connection, int ev, void *ev_data, void
         for (const auto &[endpoint, handler] : *endpoints) {
             // see if this handler has what we want
             if (mg_http_match_uri(http_msg, endpoint.c_str())) {
+                LOG(LL_DEBUG, ("Found handler for %s", endpoint.c_str()));
                 auto response = handler->handle(method, http_msg);
                 response.enqueue(connection);
                 LOG(LL_DEBUG, ("Finished handling connection"));
@@ -131,9 +135,17 @@ int main(int argc, char **argv) {
     }
     LOG(LL_INFO, ("Repository initialized"));
 
+    // Setup api
+    Aws::Auth::EnvironmentAWSCredentialsProvider cred_provider;
+
+    Aws::SDKOptions options;
+    options.loggingOptions.logLevel = Aws::Utils::Logging::LogLevel::Trace;
+    Aws::InitAPI(options);
+
     // Set up endpoint handlers
     auto *endpoint_mappings = new std::unordered_map<std::string, std::unique_ptr<EndpointHandler>>();
     (*endpoint_mappings)["/query"] = std::make_unique<QueryHandler>(repository);
+    (*endpoint_mappings)["/track"] = std::make_unique<TrackerHandler>(cred_provider.GetAWSCredentials());
 
     // Get connection string
     std::stringstream connection_url;
@@ -153,5 +165,6 @@ int main(int argc, char **argv) {
         mg_mgr_poll(&manager, 1000);
     mg_mgr_free(&manager);
     delete endpoint_mappings;
+    Aws::ShutdownAPI(options);
     return 0;
 }

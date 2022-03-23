@@ -26,3 +26,25 @@ add_library(egret
         egret/src/NFA.cpp egret/src/NFA.h
         egret/src/egret.cpp egret/src/egret.h)
 target_include_directories(egret PUBLIC egret/src)
+
+# Add aws sdk support
+if(AWS_EXTERN_PROJ)
+include(ExternalProject)
+set(AWSSDK_INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/aws-sdk-install)
+ExternalProject_Add(awssdk
+        # Configure
+        PREFIX ${AWSSDK_INSTALL_DIR}
+        LOG_DOWNLOAD TRUE
+        # Checkout
+        GIT_REPOSITORY https://github.com/aws/aws-sdk-cpp.git
+        GIT_TAG 1.9.219
+        GIT_SUBMODULES_RECURSE TRUE
+        GIT_SHALLOW TRUE
+        # Configure
+        CMAKE_ARGS -DBUILD_ONLY=dynamodb -DCMAKE_INSTALL_PREFIX=${AWSSDK_INSTALL_DIR} -DBUILD_SHARED_LIBS=OFF -DENABLE_TESTING=OFF
+        # Build
+        BUILD_COMMAND ninja -j8
+        # Install
+        INSTALL_COMMAND ninja install)
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${AWSSDK_INSTALL_DIR}/lib/cmake/ ${AWSSDK_INSTALL_DIR}/lib/aws-crt-cpp/cmake PARENT_SCOPE)
+endif()
