@@ -94,6 +94,9 @@ HttpResponse TrackerHandler::post(struct mg_http_message *http_message) {
 }
 
 static std::map<std::string, std::string> parse_query_params(const std::string& params) {
+    if (params.empty())
+        return {};
+
     static re2::LazyRE2 parser = {"(\\w+)=(\\w+)"};
     std::map<std::string, std::string> vars;
     std::string key, value;
@@ -155,6 +158,12 @@ HttpResponse TrackerHandler::get(struct mg_http_message *http_msg) {
     LOG(LL_VERBOSE_DEBUG, ("Starting to handle event retrieval"));
     // Get the request data
     auto query_params = parse_query_params(std::string(http_msg->query.ptr, http_msg->query.len));
+    if (query_params.empty() || !query_params.count("participantId") || !query_params.count("taskId")) {
+        nlohmann::json error;
+        error["code"] = 400;
+        error["message"] = "Missing participantId and/or taskId query parameters";
+        return HttpResponse(400, {{ "Content-Type", "application/json" }}, error.dump());
+    }
 
     // Actually perform the query
     Aws::DynamoDB::Model::ScanRequest query;
@@ -185,4 +194,18 @@ HttpResponse TrackerHandler::get(struct mg_http_message *http_msg) {
     const Aws::Vector<Aws::Map<Aws::String, Aws::DynamoDB::Model::AttributeValue>>& items = result.GetResult().GetItems();
     auto report = prepare_participant_report(items);
     return HttpResponse(200, {{"Content-Type", "application/json"}}, report.dump());
+}
+
+HttpResponse TrackerHandler::options(struct mg_http_message *http_message) {
+    HttpResponse response(204);
+    std::unordered_map<std::string, std::string> headers = {
+            { "Access-Control-Allow-Origin", "*" },
+            { "Access-Control-Allow-Methods", "GET, POST" },
+            { "Access-Control-Allow-Headers", "Accept, Content-Type, Referer, User-Agent" },
+            { "Access-Control-Max-Age", "86400" }
+    };
+
+    response.headers = std::move(headers);
+
+    return response;
 }

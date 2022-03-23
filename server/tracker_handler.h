@@ -15,6 +15,7 @@ public:
     explicit TrackerHandler(const Aws::Auth::AWSCredentials& credentials);
     HttpResponse get(struct mg_http_message *http_msg) override;
     HttpResponse post(struct mg_http_message *http_message) override;
+    HttpResponse options(struct mg_http_message *http_message) override;
 
 private:
     Aws::Client::ClientConfiguration client_config;
