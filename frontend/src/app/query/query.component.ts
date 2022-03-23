@@ -52,7 +52,10 @@ export class QueryComponent implements OnInit, OnDestroy {
 
       // If neither are null
       if (!(taskId == null || participantId == null)) {
+        console.log(`Tracking info found: (${participantId}, ${taskId})`)
         this.currentTrackingInfo = { taskId, participantId };
+      } else {
+        console.log('No tracking info found');
       }
     });
   }
@@ -83,6 +86,7 @@ export class QueryComponent implements OnInit, OnDestroy {
 
     // Make a new query event
     if (this.currentTrackingInfo) {
+      console.log(`Sending tracking event for participantId ${this.currentTrackingInfo.participantId}, taskId ${this.currentTrackingInfo.taskId}`);
       const event: QueryEvent = {
         taskId: this.currentTrackingInfo.taskId,
         participantId: this.currentTrackingInfo.participantId,
@@ -90,7 +94,9 @@ export class QueryComponent implements OnInit, OnDestroy {
         negativeExamples: value.negative
       }
   
-      this.trackingService.reportQueryEvent(event);
+      this.trackingService.reportQueryEvent(event).pipe(take(1)).subscribe(() => {
+        console.log("Successfully recorded query");
+      });
     }
   }
 
