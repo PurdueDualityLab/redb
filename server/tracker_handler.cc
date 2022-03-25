@@ -32,6 +32,33 @@ TrackerHandler::TrackerHandler(const Aws::Auth::AWSCredentials& credentials)
 {
 }
 
+static bool body_is_valid(const nlohmann::json &body, std::string *msg) {
+    bool valid = true;
+    std::stringstream msg_builder;
+    msg_builder << "Missing key(s): ";
+    if (!body.contains("taskId")) {
+        msg_builder << "taskId ";
+        valid = false;
+    }
+    if (!body.contains("participantId")) {
+        msg_builder << "participantId ";
+        valid = false;
+    }
+    if (!body.contains("positiveExamples")) {
+        msg_builder << "positiveExamples ";
+        valid = false;
+    }
+    if (!body.contains("negativeExamples")) {
+        msg_builder << "negativeExamples ";
+        valid = false;
+    }
+
+    if (!valid && msg != nullptr)
+        *msg = msg_builder.str();
+
+    return valid;
+}
+
 HttpResponse TrackerHandler::post(struct mg_http_message *http_message) {
     LOG(LL_VERBOSE_DEBUG, ("Starting to handle tracking POST request"));
 
@@ -45,6 +72,16 @@ HttpResponse TrackerHandler::post(struct mg_http_message *http_message) {
         nlohmann::json err_obj;
         err_obj["code"] = 400;
         err_obj["message"] = "Could not parse body";
+        err_obj["error"] = exe.what();
+        return HttpResponse(400, { {"Content-Type", "application/json"} }, err_obj.dump());
+    }
+
+    // Check the request body for validity
+    std::string validity_err_msg;
+    if (!body_is_valid(event, &validity_err_msg)) {
+        nlohmann::json err_obj;
+        err_obj["code"] = 400;
+        err_obj["message"] = validity_err_msg;
         return HttpResponse(400, { {"Content-Type", "application/json"} }, err_obj.dump());
     }
 
