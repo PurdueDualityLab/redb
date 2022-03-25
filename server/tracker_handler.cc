@@ -192,8 +192,13 @@ HttpResponse TrackerHandler::get(struct mg_http_message *http_msg) {
     }
 
     const Aws::Vector<Aws::Map<Aws::String, Aws::DynamoDB::Model::AttributeValue>>& items = result.GetResult().GetItems();
-    auto report = prepare_participant_report(items);
-    return HttpResponse(200, {{"Content-Type", "application/json"}}, report.dump());
+    if (items.empty()) {
+        // There are no entries for this configuration
+        return HttpResponse(204);
+    } else {
+        auto report = prepare_participant_report(items);
+        return HttpResponse(200, {{"Content-Type", "application/json"}}, report.dump());
+    }
 }
 
 HttpResponse TrackerHandler::options(struct mg_http_message *http_message) {
