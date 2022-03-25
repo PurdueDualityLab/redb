@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.20.2)
+cmake_minimum_required(VERSION 3.18.4)
 project(redb
         VERSION 0.0.0
         DESCRIPTION "Tools for reusing regular expressions")
@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD 17)
 # options to turn off some build stuff
 option(SKIP_EXPERIMENTS "Don't build any experiments" FALSE)
 option(SKIP_TESTS "Don't build any tests" FALSE)
+option(AWS_EXTERN_PROJ "AWS Sdk external project. Disable this if the aws sdk is already installed globally" FALSE)
 
 # Add 3rd party dependencies
 if(SKIP_TESTS)

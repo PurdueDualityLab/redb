@@ -17,13 +17,16 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { HttpClientModule } from '@angular/common/http';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TutorialDialogComponent } from './tutorial-dialog/tutorial-dialog.component';
+import { MatDialogModule } from '@angular/material/dialog';
 
 
 @NgModule({
   declarations: [
     QueryComponent,
     ExamplesComponent,
-    ResultsComponent
+    ResultsComponent,
+    TutorialDialogComponent
   ],
     imports: [
         CommonModule,
@@ -38,7 +41,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
         MatSnackBarModule,
         MatProgressSpinnerModule,
         MatCheckboxModule,
-        MatTooltipModule
+        MatTooltipModule,
+        MatDialogModule
     ]
 })
 export class QueryModule { }

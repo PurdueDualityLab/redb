@@ -1,11 +1,15 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormArray, FormBuilder } from '@angular/forms';
-import { BehaviorSubject, debounceTime, interval, of } from 'rxjs';
-import { concatMap, map } from 'rxjs/operators';
+import { BehaviorSubject, debounceTime, interval, of, Subject } from 'rxjs';
+import { concatMap, map, take } from 'rxjs/operators';
 import { MatCheckboxChange } from '@angular/material/checkbox';
 import { QueryService } from './query.service';
 import { Query } from './query.model';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { TutorialDialogComponent } from './tutorial-dialog/tutorial-dialog.component';
+import { QueryEvent, TrackingInfo } from '../tracking/tracking-info.model';
+import { TrackingService } from '../tracking/tracking.service';
 
 interface Settings {
   ignoreEmpty: boolean;
@@ -17,7 +21,7 @@ type SettingsId = 'ignoreEmpty';
   templateUrl: './query.component.html',
   styleUrls: ['./query.component.scss']
 })
-export class QueryComponent implements OnInit {
+export class QueryComponent implements OnInit, OnDestroy {
 
   settings: Settings = {
     ignoreEmpty: false
@@ -25,6 +29,7 @@ export class QueryComponent implements OnInit {
 
   loadingResults$: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false);
   results$: BehaviorSubject<string[]> = new BehaviorSubject<string[]>([]);
+  currentTrackingInfo: TrackingInfo | null = null;
 
   examplesForm = this.fb.group({
     positive: this.fb.array(['']),
@@ -34,10 +39,30 @@ export class QueryComponent implements OnInit {
   constructor(
     private readonly fb: FormBuilder,
     private readonly queryService: QueryService,
-    private readonly navigationService: Router
+    private readonly trackingService: TrackingService,
+    private readonly navigationService: Router,
+    private readonly matDialog: MatDialog,
+    private readonly activatedRoute: ActivatedRoute,
   ) { }
 
   ngOnInit(): void {
+    this.activatedRoute.queryParamMap.pipe(take(1)).subscribe(paramMap => {
+      const taskId = paramMap.get('taskID');
+      const participantId = paramMap.get('participantID');
+
+      // If neither are null
+      if (!(taskId == null || participantId == null)) {
+        console.log(`Tracking info found: (${participantId}, ${taskId})`)
+        this.currentTrackingInfo = { taskId, participantId };
+      } else {
+        console.log('No tracking info found');
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.loadingResults$.complete();
+    this.results$.complete();
   }
 
   onSubmit() {
@@ -58,6 +83,21 @@ export class QueryComponent implements OnInit {
           this.navigationService.navigate(['/error']).then();
         }
       });
+
+    // Make a new query event
+    if (this.currentTrackingInfo) {
+      console.log(`Sending tracking event for participantId ${this.currentTrackingInfo.participantId}, taskId ${this.currentTrackingInfo.taskId}`);
+      const event: QueryEvent = {
+        taskId: this.currentTrackingInfo.taskId,
+        participantId: this.currentTrackingInfo.participantId,
+        positiveExamples: value.positive,
+        negativeExamples: value.negative
+      }
+  
+      this.trackingService.reportQueryEvent(event).pipe(take(1)).subscribe(() => {
+        console.log("Successfully recorded query");
+      });
+    }
   }
 
   get positiveExamples(): FormArray {
@@ -70,5 +110,9 @@ export class QueryComponent implements OnInit {
 
   toggleSetting(settingId: SettingsId, event: MatCheckboxChange) {
     this.settings[settingId] = event.checked;
+  }
+
+  showTutorialDialog(): void {
+    this.matDialog.open(TutorialDialogComponent);
   }
 }
