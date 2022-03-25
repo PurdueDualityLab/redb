@@ -15,7 +15,7 @@
 enum CorpusType {
     OBJECTS, // json object per line, each object has a pattern key-value pair
     PAIRS, // Each line has an id, whitespace, and then patterns
-    CLUSTERS // json array of arrays. Each subarray is a cluster
+    CLUSTERS, // json array of arrays. Each subarray is a cluster
 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(CorpusType, {
@@ -77,6 +77,7 @@ public:
     std::string wine_path;
     std::string rex_path;
     std::string mcl_path;
+    std::optional<std::string> existing_graph_path;
 
     static ProgramOptions global_options_instance;
 };

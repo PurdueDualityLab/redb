@@ -25,10 +25,11 @@ static const struct option program_args[] = {
         { "cluster-out", required_argument, nullptr, 'o' },
         { "patterns-file", required_argument, nullptr, 'P' },
         { "parallel", required_argument, nullptr, 'j' },
-        {"corpus-type", required_argument, nullptr, 't'},
+        { "corpus-type", required_argument, nullptr, 't'},
         { "scorer", required_argument, nullptr, 's' },
-        { "strict-string-checking", no_argument, nullptr, '1' },
         { "top-k-edges", required_argument, nullptr, 'k' },
+        { "strict-string-checking", no_argument, nullptr, '1' },
+        { "existing-graph", required_argument, nullptr, '2' },
         { "help", no_argument, nullptr, 'h' },
         { nullptr, 0, nullptr, 0 }
 };
@@ -39,7 +40,8 @@ static void display_help() {
     std::cout << "\n";
     std::cout << "options:\n";
     std::cout << "-f, --spec:         sets a spec file definition. The spec file is a json file that contains all of\n"
-                "                     these options. If this file is used, all other specified params will be ignored\n"
+                "                     these options (note: dashes in these options should be replaced with underscores (_)\n"
+                "                     in the spec file). If this file is used, all other specified params will be ignored\n"
                 "                     if overwritten\n";
     std::cout << "-i, --inflation:    set the mcl inflation parameter (default is 1.8)\n";
     std::cout << "-p, --pruning:      set the mcl pruning parameter (default is off)\n";
@@ -53,6 +55,10 @@ static void display_help() {
               << "                    'objects' are json object per line, each object has a pattern kv-pair.\n"
               << "                    'pairs' are id, whitespace then pattern. (default)\n"
               << "                    'clusters' is a json array of arrays where each subarray is a cluster\n";
+    std::cout << "--existing-graph:   use a similarity graph that was already used for the given corpus. If this option\n"
+                 "                    is set, then computing the similarity matrix will be skipped. The program will just\n"
+                 "                    cluster the existing graph and map the clusters back to patterns. NOTE: you must still\n"
+                 "                    provide the corresponding corpus file so that the IDs can be mapped back to the graph.\n";
     std::cout << '\n';
     std::cout << "--strict-string-checking: strictly check for corruptions in rex strings when being loaded and unloaded\n";
     std::cout << "-h, --help:         display this help screen" << std::endl;
@@ -141,6 +147,10 @@ static ProgramOptions read_program_opts(int argc, char **argv) {
                 option_values.strict_rex_string_checking = true;
                 break;
 
+            case '2':
+                option_values.existing_graph_path = std::string(optarg);
+                break;
+
             default:
                 throw std::runtime_error("Unexpected argument");
         }
@@ -196,8 +206,9 @@ int main(int argc, char **argv) {
         }
     }
 
-    // build the similarity table
     MclWrapper mcl_wrapper(ProgramOptions::instance().mcl_path);
+
+    // build the similarity table, but don't actually compute it
     std::function<std::shared_ptr<BaseSimilarityScorer>(unsigned long, std::string)> scorer_constructor;
     if (ProgramOptions::instance().scorer_type == REX) {
         RexWrapper rex_wrapper(ProgramOptions::instance().rex_path, ProgramOptions::instance().wine_path);
@@ -219,28 +230,26 @@ int main(int argc, char **argv) {
         };
     }
 
-    SimilarityTable table(patterns, ProgramOptions::instance().workers, scorer_constructor);
+    SimilarityTable table(patterns, ProgramOptions::instance().workers, scorer_constructor, !ProgramOptions::instance().existing_graph_path.has_value());
 
-    // Create similarity graph
-    table.to_similarity_graph();
+    // If an existing graph is passed, then skip generating the similarity table
+    if (!ProgramOptions::instance().existing_graph_path) {
+        // Create similarity graph
+        table.to_similarity_graph();
 
-    // Next line is optional. This prunes before going to mcl
-    if (ProgramOptions::instance().pruning > 0) {
-        std::cout << "Pruning values below " << ProgramOptions::instance().pruning << std::endl;
-        table.prune(ProgramOptions::instance().pruning);
+        // Next line is optional. This prunes before going to mcl
+        if (ProgramOptions::instance().pruning > 0) {
+            std::cout << "Pruning values below " << ProgramOptions::instance().pruning << std::endl;
+            table.prune(ProgramOptions::instance().pruning);
+        }
     }
-
-    // Prune anything that's not the top k-edges
-#if 0
-    if (ProgramOptions::instance().top_k_edges > 0) {
-        std::cout << "Pruning values below the top k edges" << std::endl;
-        table.top_k_edges(ProgramOptions::instance().top_k_edges);
-    }
-#endif
+    // ...to here is the scoring portion
 
     std::string abc_graph;
-    if (ProgramOptions::instance().graph_out)
-         abc_graph = table.to_abc(*ProgramOptions::instance().graph_out);
+    if (ProgramOptions::instance().existing_graph_path)
+        abc_graph = *ProgramOptions::instance().existing_graph_path;
+    else if (ProgramOptions::instance().graph_out)
+        abc_graph = table.to_abc(*ProgramOptions::instance().graph_out);
     else
         abc_graph = table.to_abc();
 
