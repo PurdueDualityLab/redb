@@ -64,16 +64,18 @@ void ProgramOptions::patch_from_spec_file(const std::string &spec_path) {
         this->graph_out = spec.value("graph_out", *this->graph_out);
     if (spec.contains("cluster_out"))
         this->cluster_out = spec.value("cluster_out", *this->cluster_out);
-    if (spec.contains("patterns_file_out"))
-        this->patterns_file_out = spec.value("patterns_file_out", *this->patterns_file_out);
+    if (spec.contains("patterns_out"))
+        this->patterns_file_out = spec.value("patterns_out", *this->patterns_file_out);
     this->corpus_file = spec.value("corpus_file", this->corpus_file);
     this->workers = spec.value("workers", this->workers);
     if (spec.contains("corpus_type"))
         this->corpus_type = spec.at("corpus_type").get<CorpusType>();
     this->strict_rex_string_checking = spec.value("strict_rex_string_checking", this->strict_rex_string_checking);
     if (spec.contains("scorer_type"))
-        this->scorer_type = spec.at("scorer_type").get<ScorerType>();
+        this->scorer_type = spec.at("scorer").get<ScorerType>();
     this->top_k_edges = spec.value("top_k_edges", this->top_k_edges);
+    if (spec.contains("existing_graph"))
+        this->existing_graph_path = spec.value("existing_graph", *this->existing_graph_path);
     this->wine_path = spec.value("wine_path", this->wine_path);
     this->rex_path = spec.value("rex_path", this->rex_path);
     this->mcl_path = spec.value("mcl_path", this->mcl_path);
