@@ -23,6 +23,12 @@ def main(true_path: str, check_path: str):
     # Read the objects
     true_ids, true_clusters = data_prep.read_clusters_objects(true_path)
     check_ids, check_clusters = data_prep.read_clusters_objects(check_path)
+
+    if true_ids.keys() == check_ids.keys():
+        print("Patterns are the same")
+    else:
+        print("Patterns are not the same")
+
     # cehck if they match up
     if true_ids == check_ids:
         print("ids match up")
