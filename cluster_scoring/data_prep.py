@@ -1,33 +1,44 @@
 
 import json
+from optparse import Option
 import re
+from time import perf_counter
 from typing import Dict, List, Set, Tuple
 
 
-def read_clusters_objects(path: str) -> Tuple[Dict[str, int], Dict[int, Set[str]]]:
-    """Read an array of clusters into a map that assigns every regex an id
-
-    Args:
-        path (str): Path to the file to read
-
-    Returns:
-        dict[int, str]: map of regexes and their ids
-    """
+def read_clusters_objects(path: str) -> Dict[int, Set[str]]:
     all_clusters: Dict[int, set[str]] = {}
-    pattern_ids: Dict[str, int] = {}
-    running_pattern_id = 0
     running_cluster_id = 0
     with open(path, 'r') as clusters_file:
-        for cluster in clusters_file:
-            cluster_patterns = set()
-            for pattern in cluster:
-                cluster_patterns.add(pattern)
-                pattern_ids[pattern] = running_pattern_id
-                running_pattern_id += 1
+        cluster_obj = json.load(clusters_file)
+        for cluster in cluster_obj:
+            cluster_patterns = set(cluster)
             all_clusters[running_cluster_id] = cluster_patterns
             running_cluster_id += 1
     
-    return (pattern_ids, all_clusters)
+    return all_clusters
+
+
+def create_cluster_vector(cluster_map: Dict[int, Set[str]], pattern_ids: Dict[str, int]) -> List[int]:
+    cluster_vector = [0] * len(pattern_ids)
+    for cluster_idx in cluster_map:
+        cluster = cluster_map[cluster_idx]
+        for pattern in cluster:
+            if pattern in pattern_ids:
+                pattern_id = pattern_ids[pattern]
+                cluster_vector[pattern_id] = cluster_idx
+    return cluster_vector
+
+
+def cluster_map_to_list(cluster_map: Dict[int, Set[int]], patterns: List[int]) -> List[int]:
+    patterns_to_clusters = [0] * len(patterns)
+    for idx, pattern in enumerate(patterns):
+        for cluster_id, cluster_patterns in cluster_map.items():
+            if pattern in cluster_patterns:
+                patterns_to_clusters[idx] = cluster_id
+                continue
+
+    return patterns_to_clusters
 
 
 def read_cluster_map(path: str) -> Dict[int, Set[int]]:
