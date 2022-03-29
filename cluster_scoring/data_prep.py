@@ -1,10 +1,10 @@
 
 import json
 import re
-from typing import Tuple
+from typing import Dict, List, Set, Tuple
 
 
-def read_clusters_objects(path: str) -> Tuple[dict[str, int], dict[int, set[str]]]:
+def read_clusters_objects(path: str) -> Tuple[Dict[str, int], Dict[int, Set[str]]]:
     """Read an array of clusters into a map that assigns every regex an id
 
     Args:
@@ -13,8 +13,8 @@ def read_clusters_objects(path: str) -> Tuple[dict[str, int], dict[int, set[str]
     Returns:
         dict[int, str]: map of regexes and their ids
     """
-    all_clusters: dict[int, set[str]] = {}
-    pattern_ids: dict[str, int] = {}
+    all_clusters: Dict[int, set[str]] = {}
+    pattern_ids: Dict[str, int] = {}
     running_pattern_id = 0
     running_cluster_id = 0
     with open(path, 'r') as clusters_file:
@@ -30,8 +30,8 @@ def read_clusters_objects(path: str) -> Tuple[dict[str, int], dict[int, set[str]
     return (pattern_ids, all_clusters)
 
 
-def read_cluster_map(path: str) -> dict[int, set[int]]:
-    cluster_map: dict[int, set[int]] = {}
+def read_cluster_map(path: str) -> Dict[int, Set[int]]:
+    cluster_map: Dict[int, set[int]] = {}
     cluster_parser = re.compile(r"(\d+)\s*")
     cluster_id = 0
     with open(path, 'r') as cluster_file:
@@ -44,8 +44,8 @@ def read_cluster_map(path: str) -> dict[int, set[int]]:
     return cluster_map
 
 
-def read_all_pattern_ids(path: str) -> list[int]:
-    id_set: set[int] = set()
+def read_all_pattern_ids(path: str) -> List[int]:
+    id_set: Set[int] = set()
     cluster_parser = re.compile(r"(\d+)\s*")
     with open(path, 'r') as cluster_file:
         for line in cluster_file:

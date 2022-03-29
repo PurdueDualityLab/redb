@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
+from typing import Dict, List, Set
 
 from sklearn.metrics import rand_score, adjusted_rand_score
 
 import data_prep
 
 
-def cluster_map_to_list(cluster_map: dict[int, set[int]], patterns: list[int]) -> list[int]:
+def cluster_map_to_list(cluster_map: Dict[int, Set[int]], patterns: List[int]) -> List[int]:
     patterns_to_clusters = [0] * len(patterns)
     for idx, pattern in enumerate(patterns):
         for cluster_id, cluster_patterns in cluster_map.items():
