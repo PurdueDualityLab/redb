@@ -1,5 +1,33 @@
 
+import json
 import re
+from typing import Tuple
+
+
+def read_clusters_objects(path: str) -> Tuple[dict[str, int], dict[int, set[str]]]:
+    """Read an array of clusters into a map that assigns every regex an id
+
+    Args:
+        path (str): Path to the file to read
+
+    Returns:
+        dict[int, str]: map of regexes and their ids
+    """
+    all_clusters: dict[int, set[str]] = {}
+    pattern_ids: dict[str, int] = {}
+    running_pattern_id = 0
+    running_cluster_id = 0
+    with open(path, 'r') as clusters_file:
+        for cluster in clusters_file:
+            cluster_patterns = set()
+            for pattern in cluster:
+                cluster_patterns.add(pattern)
+                pattern_ids[pattern] = running_pattern_id
+                running_pattern_id += 1
+            all_clusters[running_cluster_id] = cluster_patterns
+            running_cluster_id += 1
+    
+    return (pattern_ids, all_clusters)
 
 
 def read_cluster_map(path: str) -> dict[int, set[int]]:

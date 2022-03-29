@@ -19,14 +19,14 @@ def cluster_map_to_list(cluster_map: dict[int, set[int]], patterns: list[int]) -
 
 
 def main(true_path: str, check_path: str):
-    # load in everything
-    true_clusters = data_prep.read_cluster_map(true_path)
-    true_patterns = data_prep.read_all_pattern_ids(true_path)
-    actual_clusters = data_prep.read_cluster_map(check_path)
-    actual_patterns = data_prep.read_all_pattern_ids(check_path)
-
-    # see how many patterns are not in alignment
-    print(f"actual_patterns size - true patterns size = {len(actual_patterns) - len(true_patterns)}")
+    # Read the objects
+    true_ids, true_clusters = data_prep.read_clusters_objects(true_path)
+    check_ids, check_clusters = data_prep.read_clusters_objects(check_path)
+    # cehck if they match up
+    if true_ids == check_ids:
+        print("ids match up")
+    else:
+        print("ids don't match up")
 
 
 if __name__ == '__main__':
