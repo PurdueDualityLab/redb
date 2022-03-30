@@ -16,6 +16,7 @@ class GridSpec:
     truth_data_path: str = ""
     similarity_graph_path: str = ""
     clustering_spec_file: str = ""
+    compatible_patterns = ""
 
 
 def read_spec_file(file_path: str) -> GridSpec:
@@ -25,16 +26,24 @@ def read_spec_file(file_path: str) -> GridSpec:
         spec.cluster_tool_path = obj["cluster_tool"]
         spec.check_clusters_path = obj["cluster_checker"]
         spec.truth_data_path = obj["truth_data"]
+        spec.compatible_patterns = obj.at('compatible_patterns')
         spec.similarity_graph_path = obj["similarity_graph"]
         spec.clustering_spec_file = obj["clustering_spec"]
     return spec
+
+
+def to_str_map(mat: Dict[Tuple[float, float, int], Tuple[float, float]]) -> Dict[str, str]:
+    results: Dict[str, str] = {
+        str(key): str(value) for key, value in mat.items()
+    }
+    return results
 
 
 def main(spec: GridSpec):
     # Do some grid searching
     inflation_params = [x/100.0 for x in range(100, 600, 25)]
     pruning_params   = [x/100.0 for x in range(600, 900, 25)]
-    top_k_edges      = [x for x in range(70, 90, 2)]
+    top_k_edges      = [x       for x in range(70, 90, 2)]
 
     # Make every input parameter
     input_space: List[Tuple(float, float, int)] = []
@@ -59,7 +68,7 @@ def main(spec: GridSpec):
                 "-p", str(pruning_val),
                 "-k", str(k_val),
                 "-P", clusters_output_file.name,
-                spec.truth_data_path
+                spec.compatible_patterns if spec.compatible_patterns is not None else spec.truth_data_path
             ]
 
             # Execute the configuration
@@ -79,7 +88,8 @@ def main(spec: GridSpec):
 
     # We have a map of all of the scores. Save them to a file
     with open('grid_search_results.json', 'w') as results_file:
-        json.dump(score_matrix, results_file)
+        str_map = to_str_map(score_matrix)
+        json.dump(str_map, results_file)
         
 
 if __name__ == '__main__':
