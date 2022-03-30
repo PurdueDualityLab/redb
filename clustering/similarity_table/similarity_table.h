@@ -25,6 +25,7 @@ public:
     void to_similarity_graph();
     std::string to_abc();
     std::string to_abc(const std::string &abc_graph_output);
+    std::string save_compatible_patterns(const std::string &path) const;
     void prune(double threshold);
     /**
      * Only keeps the top-k highest edges for a given node

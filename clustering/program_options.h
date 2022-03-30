@@ -27,11 +27,13 @@ NLOHMANN_JSON_SERIALIZE_ENUM(CorpusType, {
 enum ScorerType {
     REX, // use rex for string generation
     EGRET, // use egret for string generation
+    NOOP // Used for just putting regexes that are assumed to work in a similarity table
 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(ScorerType, {
     { REX, "rex" },
-    { EGRET, "egret" }
+    { EGRET, "egret" },
+    { NOOP, "noop" }
 })
 
 class ProgramOptions {
@@ -78,6 +80,7 @@ public:
     std::string rex_path;
     std::string mcl_path;
     std::optional<std::string> existing_graph_path;
+    std::optional<std::string> compatible_patterns_path;
 
     static ProgramOptions global_options_instance;
 };

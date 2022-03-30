@@ -35,5 +35,15 @@ public:
     }
 };
 
+class NoopSimilarityScorer : public BaseSimilarityScorer {
+public:
+    NoopSimilarityScorer(std::string pattern, unsigned long id)
+    : BaseSimilarityScorer(std::move(pattern), id)
+    { }
+
+    double score(std::shared_ptr<BaseSimilarityScorer> other_scorer) override {
+        throw std::runtime_error("This scorer cannot score other regexes. It's for storage only");
+    }
+};
 
 #endif //_BASE_SIMILARITY_SCORER_H

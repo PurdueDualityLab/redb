@@ -30,6 +30,7 @@ static const struct option program_args[] = {
         { "top-k-edges", required_argument, nullptr, 'k' },
         { "strict-string-checking", no_argument, nullptr, '1' },
         { "existing-graph", required_argument, nullptr, '2' },
+        { "compatible-patterns", required_argument, nullptr, '3' },
         { "help", no_argument, nullptr, 'h' },
         { nullptr, 0, nullptr, 0 }
 };
@@ -39,26 +40,27 @@ static void display_help() {
     std::cout << "usage: clustering [options] [corpus_file.txt]\n";
     std::cout << "\n";
     std::cout << "options:\n";
-    std::cout << "-f, --spec:         sets a spec file definition. The spec file is a json file that contains all of\n"
-                "                     these options (note: dashes in these options should be replaced with underscores (_)\n"
-                "                     in the spec file). If this file is used, all other specified params will be ignored\n"
-                "                     if overwritten\n";
-    std::cout << "-i, --inflation:    set the mcl inflation parameter (default is 1.8)\n";
-    std::cout << "-p, --pruning:      set the mcl pruning parameter (default is off)\n";
-    std::cout << "-g, --graph-out:    path to a file to write out the resulting similarity graph\n";
-    std::cout << "-o, --cluster-out:  path to a file to write the resulting cluster with ids (default is clusters.txt)\n";
-    std::cout << "-P, --patterns-out: file to write the resulting clusters to, ids mapped to patterns\n";
-    std::cout << "-j, --parallel:     how many workers to work with (NOTE: default is all available cores in the computer)\n";
-    std::cout << "-s, --scorer:       what kind of scorer to use for language approximation. 'rex' (default), 'egret'\n";
-    std::cout << "-k, --top-k-edges:  only keep the top k edges\n";
-    std::cout << "-t, --corpus-type:  how the patterns are represented in the corpus. options are 'objects' or 'pairs'\n"
-              << "                    'objects' are json object per line, each object has a pattern kv-pair.\n"
-              << "                    'pairs' are id, whitespace then pattern. (default)\n"
-              << "                    'clusters' is a json array of arrays where each subarray is a cluster\n";
-    std::cout << "--existing-graph:   use a similarity graph that was already used for the given corpus. If this option\n"
-                 "                    is set, then computing the similarity matrix will be skipped. The program will just\n"
-                 "                    cluster the existing graph and map the clusters back to patterns. NOTE: you must still\n"
-                 "                    provide the corresponding corpus file so that the IDs can be mapped back to the graph.\n";
+    std::cout << "-f, --spec:              sets a spec file definition. The spec file is a json file that contains all of\n"
+                "                          these options (note: dashes in these options should be replaced with underscores (_)\n"
+                "                          in the spec file). If this file is used, all other specified params will be ignored\n"
+                "                          if overwritten\n";
+    std::cout << "-i, --inflation:         set the mcl inflation parameter (default is 1.8)\n";
+    std::cout << "-p, --pruning:           set the mcl pruning parameter (default is off)\n";
+    std::cout << "-g, --graph-out:         path to a file to write out the resulting similarity graph\n";
+    std::cout << "-o, --cluster-out:       path to a file to write the resulting cluster with ids (default is clusters.txt)\n";
+    std::cout << "-P, --patterns-out:      file to write the resulting clusters to, ids mapped to patterns\n";
+    std::cout << "-j, --parallel:          how many workers to work with (NOTE: default is all available cores in the computer)\n";
+    std::cout << "-s, --scorer:            what kind of scorer to use for language approximation. 'rex' (default), 'egret', 'noop'\n";
+    std::cout << "-k, --top-k-edges:       only keep the top k edges\n";
+    std::cout << "-t, --corpus-type:       how the patterns are represented in the corpus. options are 'objects' or 'pairs'\n"
+              << "                         'objects' are json object per line, each object has a pattern kv-pair.\n"
+              << "                         'pairs' are id, whitespace then pattern. (default)\n"
+              << "                         'clusters' is a json array of arrays where each subarray is a cluster\n";
+    std::cout << "--existing-graph:        use a similarity graph that was already used for the given corpus. If this option\n"
+                 "                         is set, then computing the similarity matrix will be skipped. The program will just\n"
+                 "                         cluster the existing graph and map the clusters back to patterns. NOTE: you must still\n"
+                 "                         provide the corresponding corpus file so that the IDs can be mapped back to the graph.\n";
+    std::cout << "--compatible-patterns:   path to write all of the compatible patterns to. Outputs a file of regex id pairs\n";
     std::cout << '\n';
     std::cout << "--strict-string-checking: strictly check for corruptions in rex strings when being loaded and unloaded\n";
     std::cout << "-h, --help:         display this help screen" << std::endl;
@@ -128,6 +130,8 @@ static ProgramOptions read_program_opts(int argc, char **argv) {
                     option_values.scorer_type = ScorerType::EGRET;
                 } else if (option == "rex") {
                     option_values.scorer_type = ScorerType::REX;
+                } else if (option == "noop") {
+                    option_values.scorer_type = ScorerType::NOOP;
                 } else {
                     throw std::runtime_error("Invalid scorer type");
                 }
@@ -149,6 +153,10 @@ static ProgramOptions read_program_opts(int argc, char **argv) {
 
             case '2':
                 option_values.existing_graph_path = std::string(optarg);
+                break;
+
+            case '3':
+                option_values.compatible_patterns_path = std::string(optarg);
                 break;
 
             default:
@@ -219,7 +227,7 @@ int main(int argc, char **argv) {
                 return std::shared_ptr<BaseSimilarityScorer>();
             }
         };
-    } else {
+    } else if (ProgramOptions::instance().scorer_type == ScorerType::EGRET) {
         scorer_constructor = [](unsigned long id, const std::string &pattern) {
             try {
                 return std::shared_ptr<BaseSimilarityScorer>(new EgretSimilarityScorer(pattern, id));
@@ -228,9 +236,19 @@ int main(int argc, char **argv) {
                 return std::shared_ptr<BaseSimilarityScorer>();
             }
         };
+    } else {
+        scorer_constructor = [](unsigned long id, const std::string &pattern) {
+            // This will always work
+            return std::make_shared<NoopSimilarityScorer>(pattern, id);
+        };
     }
 
     SimilarityTable table(patterns, ProgramOptions::instance().workers, scorer_constructor, !ProgramOptions::instance().existing_graph_path.has_value());
+
+    // If we are saving the compatible patterns, then do that
+    if (ProgramOptions::instance().compatible_patterns_path) {
+        table.save_compatible_patterns(*ProgramOptions::instance().compatible_patterns_path);
+    }
 
     // If an existing graph is passed, then skip generating the similarity table
     if (!ProgramOptions::instance().existing_graph_path) {

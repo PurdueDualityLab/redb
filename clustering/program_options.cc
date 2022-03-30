@@ -76,6 +76,8 @@ void ProgramOptions::patch_from_spec_file(const std::string &spec_path) {
     this->top_k_edges = spec.value("top_k_edges", this->top_k_edges);
     if (spec.contains("existing_graph"))
         this->existing_graph_path = spec.value("existing_graph", *this->existing_graph_path);
+    if (spec.contains("compatible_patterns"))
+        this->compatible_patterns_path = spec.value("compatible_patterns", *this->compatible_patterns_path);
     this->wine_path = spec.value("wine_path", this->wine_path);
     this->rex_path = spec.value("rex_path", this->rex_path);
     this->mcl_path = spec.value("mcl_path", this->mcl_path);

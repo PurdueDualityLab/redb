@@ -153,3 +153,12 @@ void SimilarityTable::top_k_edges(unsigned int edges) {
         }
     }
 }
+
+std::string SimilarityTable::save_compatible_patterns(const std::string &path) const {
+    std::ofstream file_output(path);
+    for (const auto &scorer : this->scorers) {
+        file_output << scorer->get_id() << '\t' << scorer->get_pattern() << '\n';
+    }
+    file_output.flush();
+    return path;
+}
