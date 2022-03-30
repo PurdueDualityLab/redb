@@ -185,13 +185,21 @@ void SimilarityTable::load_similarity_scores(const std::string &graph_file) {
         if (re2::RE2::FullMatch(line, *abc_parser, &row_id, &col_id, &score)) {
             // Load the score
             // TODO consider using checked accessors as we cannot necessarily assume correct code
+            unsigned int row_idx, col_idx;
             try {
-                unsigned int row_idx = this->index_for_scorer(row_id);
-                unsigned int col_idx = this->index_for_scorer(col_id);
-                this->scores[row_idx][col_idx] = score;
+                row_idx = this->index_for_scorer(row_id);
             } catch (std::runtime_error &exe) {
-                std::cerr << "Some regex was not found. Skipping it and settings its score to zero" << std::endl;
+                std::cerr << "Regex: row id " << row_id << " was not found, skipping" << std::endl;
+                continue;
             }
+            try {
+                col_idx = this->index_for_scorer(col_id);
+            } catch (std::runtime_error &exe) {
+                std::cerr << "Regex: col id " << col_id << " was not found, skipping" << std::endl;
+                continue;
+            }
+
+            this->scores[row_idx][col_idx] = score;
         }
     }
 }
