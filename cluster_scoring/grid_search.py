@@ -32,8 +32,8 @@ def read_spec_file(file_path: str) -> GridSpec:
 
 def main(spec: GridSpec):
     # Do some grid searching
-    inflation_params = [x for x in range(1, 6, .25)]
-    pruning_params   = [x for x in range(.6, .9, .25)]
+    inflation_params = [x/100.0 for x in range(100, 600, 25)]
+    pruning_params   = [x/100.0 for x in range(600, 900, 25)]
     top_k_edges      = [x for x in range(70, 90, 2)]
 
     # Make every input parameter
