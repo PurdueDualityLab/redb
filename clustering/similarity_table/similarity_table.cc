@@ -28,13 +28,13 @@ SimilarityTable::SimilarityTable(const std::unordered_map<unsigned long, std::st
     }
     std::cout << "Created " << this->scorers.size() << " scorers" << std::endl;
 
-    if (computeMatrix) {
-        // Now compute the similarity matrix
-        this->scores = std::vector<std::vector<double>>(this->scorers.size());
-        for (size_t row = 0; row < this->scorers.size(); row++) {
-            this->scores[row] = std::vector<double>(this->scorers.size());
-        }
+    // Initialize the scores
+    this->scores = std::vector<std::vector<double>>(this->scorers.size());
+    for (size_t row = 0; row < this->scorers.size(); row++) {
+        this->scores[row] = std::vector<double>(this->scorers.size(), 0);
+    }
 
+    if (computeMatrix) {
         // Make a bunch of tasks to compute the similarity matrix
         std::vector<std::future<std::tuple<size_t, size_t, double>>> scoring_tasks;
         for (size_t row = 0; row < this->scorers.size(); row++) {
