@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from ast import Param
+from inspect import Parameter
 from pydoc import describe
 from tabnanny import check
 import tempfile
@@ -10,6 +12,27 @@ import json
 from argparse import ArgumentParser
 
 
+class ParameterRange:
+
+    def __init__(self, lower: float, upper: float, step: float) -> None:
+        exps = []
+        exp = 0
+
+        for value in [lower, upper, step]:
+            exp = 0
+            while value != int((10 ** exp) * value) / (10 ** exp):
+                expo += 1
+            exps.append(exp)
+
+        self.exp = max(exps)
+        self.lower = lower * 10 ** self.exp
+        self.upper = upper * 10 ** self.exp
+        self.step = step * 10 ** self.exp
+
+    def get_values(self):
+        return [x / self.exp for x in range(self.lower, self.upper, self.step)]
+
+
 class GridSpec:
     cluster_tool_path: str = ""
     check_clusters_path: str = ""
@@ -17,6 +40,9 @@ class GridSpec:
     similarity_graph_path: str = ""
     clustering_spec_file: str = ""
     compatible_patterns = None
+    inflation_values = ParameterRange(1, 6, .25)
+    pruning_values = ParameterRange(.6, .9, .025)
+    top_k_edges_values = ParameterRange(70, 90, 2)
 
 
 def read_spec_file(file_path: str) -> GridSpec:
@@ -30,6 +56,16 @@ def read_spec_file(file_path: str) -> GridSpec:
             spec.compatible_patterns = obj['compatible_patterns']
         spec.similarity_graph_path = obj["similarity_graph"]
         spec.clustering_spec_file = obj["clustering_spec"]
+        if 'inflation_values' in obj:
+            updated_inflation_values = obj['inflation_values']
+            spec.inflation_values = ParameterRange(updated_inflation_values['lower'], updated_inflation_values['upper'], updated_inflation_values['step'])
+        if 'pruning_values' in obj:
+            updated_pruning_values = obj['pruning_values']
+            spec.pruning_values = ParameterRange(updated_pruning_values['lower'], updated_pruning_values['upper'], updated_pruning_values['step'])
+        if 'top_k_edge_values' in obj:
+            updated_edge_values = obj['top_k_edge_values']
+            spec.top_k_edges_values = ParameterRange(updated_edge_values['lower'], updated_edge_values['upper'], updated_edge_values['step'])
+            
     return spec
 
 
@@ -42,9 +78,9 @@ def to_str_map(mat: Dict[Tuple[float, float, int], Tuple[float, float]]) -> Dict
 
 def main(spec: GridSpec):
     # Do some grid searching
-    inflation_params = [x/100.0  for x in range(100, 600, 25)]
-    pruning_params   = [x/1000.0 for x in range(600, 900, 25)]
-    top_k_edges      = [x        for x in range(70, 90, 2)]
+    inflation_params = spec.inflation_values.get_values()
+    pruning_params   = spec.pruning_values.get_values()
+    top_k_edges      = spec.top_k_edges_values.get_values()
 
     # Make every input parameter
     input_space: List[Tuple(float, float, int)] = []
