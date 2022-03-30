@@ -48,7 +48,7 @@ def main(spec: GridSpec):
     adj_rand_finder = re.compile(r"Adjusted rand score: ([0-9.]+)")
     score_matrix: Dict[Tuple[float, float, int], Tuple[float, float]] = {}
     for inflation_val, pruning_val, k_val in input_space:
-        with tempfile.NamedTemporaryFile('rw') as clusters_output_file:
+        with tempfile.NamedTemporaryFile('r+') as clusters_output_file:
             invocation = [
                 spec.cluster_tool_path,
                 "--existing-graph", spec.similarity_graph_path,
