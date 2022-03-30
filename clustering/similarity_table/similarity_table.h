@@ -17,6 +17,10 @@
 
 class SimilarityTable {
 public:
+    static SimilarityTable FromExistingGraph(const std::unordered_map<unsigned long, std::string> &patterns, unsigned int workers,
+                             std::function<std::shared_ptr<BaseSimilarityScorer>(unsigned long, std::string)> scorer_constructor,
+                             const std::string &graph_file);
+
     explicit SimilarityTable(const std::unordered_map<unsigned long, std::string> &patterns, unsigned int workers,
                              std::function<std::shared_ptr<BaseSimilarityScorer>(unsigned long, std::string)> scorer_constructor,
                              bool computeMatrix = true);
@@ -43,6 +47,8 @@ public:
     }
 
 private:
+    void load_similarity_scores(const std::string &graph_file);
+
     std::vector<std::vector<double>> scores;
     std::vector<std::shared_ptr<BaseSimilarityScorer>> scorers;
     std::string abc_file;

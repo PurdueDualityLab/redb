@@ -5,6 +5,7 @@
 #include "similarity_table.h"
 
 #include <queue>
+#include <utility>
 
 SimilarityTable::SimilarityTable(const std::unordered_map<unsigned long, std::string> &patterns, unsigned int workers,
                                  std::function<std::shared_ptr<BaseSimilarityScorer>(unsigned long,std::string)> scorer_constructor,
@@ -161,4 +162,30 @@ std::string SimilarityTable::save_compatible_patterns(const std::string &path) c
     }
     file_output.flush();
     return path;
+}
+
+SimilarityTable
+SimilarityTable::FromExistingGraph(const std::unordered_map<unsigned long, std::string> &patterns, unsigned int workers,
+                                   std::function<std::shared_ptr<BaseSimilarityScorer>(unsigned long,
+                                                                                       std::string)> scorer_constructor,
+                                   const std::string &graph_file) {
+    SimilarityTable table(patterns, workers, std::move(scorer_constructor), false);
+    table.load_similarity_scores(graph_file);
+    return table;
+}
+
+void SimilarityTable::load_similarity_scores(const std::string &graph_file) {
+    static re2::LazyRE2 abc_parser = {R"(^(\d+)\s+(\d+)\s+([0-9.]+)$)"};
+    std::ifstream graph_stream(graph_file);
+    std::string line;
+    while (std::getline(graph_stream, line)) {
+        int row, col;
+        double score;
+        // Parse the line
+        if (re2::RE2::FullMatch(line, *abc_parser, &row, &col, &score)) {
+            // Load the score
+            // TODO consider using checked accessors as we cannot necessarily assume correct code
+            this->scores[row][col] = score;
+        }
+    }
 }

@@ -58,6 +58,7 @@ public:
             , wine_path("/usr/bin/wine")
             , rex_path("/home/charlie/Downloads/Rex/Rex.exe")
             , mcl_path("/usr/local/bin/mcl")
+            , skip_similarity_graph(false)
     {  }
 
     friend std::ostream &operator<<(std::ostream &os, const ProgramOptions &opts);
@@ -81,6 +82,7 @@ public:
     std::string mcl_path;
     std::optional<std::string> existing_graph_path;
     std::optional<std::string> compatible_patterns_path;
+    bool skip_similarity_graph;
 
     static ProgramOptions global_options_instance;
 };

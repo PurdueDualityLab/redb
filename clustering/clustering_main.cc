@@ -31,6 +31,7 @@ static const struct option program_args[] = {
         { "strict-string-checking", no_argument, nullptr, '1' },
         { "existing-graph", required_argument, nullptr, '2' },
         { "compatible-patterns", required_argument, nullptr, '3' },
+        { "skip-similarity-graph", no_argument, nullptr, '4' },
         { "help", no_argument, nullptr, 'h' },
         { nullptr, 0, nullptr, 0 }
 };
@@ -61,6 +62,7 @@ static void display_help() {
                  "                         cluster the existing graph and map the clusters back to patterns. NOTE: you must still\n"
                  "                         provide the corresponding corpus file so that the IDs can be mapped back to the graph.\n";
     std::cout << "--compatible-patterns:   path to write all of the compatible patterns to. Outputs a file of regex id pairs\n";
+    std::cout << "--skip-similarity-graph: don't actually compute the similarity graph\n";
     std::cout << '\n';
     std::cout << "--strict-string-checking: strictly check for corruptions in rex strings when being loaded and unloaded\n";
     std::cout << "-h, --help:         display this help screen" << std::endl;
@@ -159,6 +161,10 @@ static ProgramOptions read_program_opts(int argc, char **argv) {
                 option_values.compatible_patterns_path = std::string(optarg);
                 break;
 
+            case '4':
+                option_values.skip_similarity_graph = true;
+                break;
+
             default:
                 throw std::runtime_error("Unexpected argument");
         }
@@ -243,33 +249,43 @@ int main(int argc, char **argv) {
         };
     }
 
-    SimilarityTable table(patterns, ProgramOptions::instance().workers, scorer_constructor, !ProgramOptions::instance().existing_graph_path.has_value());
+    // SimilarityTable table(patterns, ProgramOptions::instance().workers, scorer_constructor, !ProgramOptions::instance().existing_graph_path.has_value());
+    std::unique_ptr<SimilarityTable> table;
+    if (ProgramOptions::instance().existing_graph_path) {
+        // We have a graph we want to load, so populate the table with it
+        auto populated_table = SimilarityTable::FromExistingGraph(patterns,
+                                                                  ProgramOptions::instance().workers,
+                                                                  scorer_constructor,
+                                                                  *ProgramOptions::instance().existing_graph_path);
+        auto *ptr = new SimilarityTable(populated_table);
+        table = std::unique_ptr<SimilarityTable>(ptr);
+    } else {
+        // Construct a new one
+        table = std::make_unique<SimilarityTable>(patterns, ProgramOptions::instance().workers, scorer_constructor);
+    }
 
     // If we are saving the compatible patterns, then do that
     if (ProgramOptions::instance().compatible_patterns_path) {
-        table.save_compatible_patterns(*ProgramOptions::instance().compatible_patterns_path);
+        table->save_compatible_patterns(*ProgramOptions::instance().compatible_patterns_path);
     }
 
-    // If an existing graph is passed, then skip generating the similarity table
-    if (!ProgramOptions::instance().existing_graph_path) {
-        // Create similarity graph
-        table.to_similarity_graph();
+    // Create similarity graph
+    if (!ProgramOptions::instance().skip_similarity_graph)
+        table->to_similarity_graph();
 
-        // Next line is optional. This prunes before going to mcl
-        if (ProgramOptions::instance().pruning > 0) {
-            std::cout << "Pruning values below " << ProgramOptions::instance().pruning << std::endl;
-            table.prune(ProgramOptions::instance().pruning);
-        }
+    // Next line is optional. This prunes before going to mcl
+    if (ProgramOptions::instance().pruning > 0) {
+        std::cout << "Pruning values below " << ProgramOptions::instance().pruning << std::endl;
+        table->prune(ProgramOptions::instance().pruning);
     }
-    // ...to here is the scoring portion
 
     std::string abc_graph;
     if (ProgramOptions::instance().existing_graph_path)
         abc_graph = *ProgramOptions::instance().existing_graph_path;
     else if (ProgramOptions::instance().graph_out)
-        abc_graph = table.to_abc(*ProgramOptions::instance().graph_out);
+        abc_graph = table->to_abc(*ProgramOptions::instance().graph_out);
     else
-        abc_graph = table.to_abc();
+        abc_graph = table->to_abc();
 
     std::vector<std::vector<unsigned long>> raw_clusters;
     if (ProgramOptions::instance().cluster_out) {
@@ -285,11 +301,11 @@ int main(int argc, char **argv) {
     std::cout << cluster_set << std::endl;
     if (ProgramOptions::instance().patterns_file_out) {
         std::ofstream patterns_file(*ProgramOptions::instance().patterns_file_out);
-        cluster_set.write_patterns(table, patterns_file);
+        cluster_set.write_patterns(*table, patterns_file);
         patterns_file.close();
     } else {
         std::cout << "\n\n\n" << std::endl;
-        cluster_set.write_patterns(table, std::cout);
+        cluster_set.write_patterns(*table, std::cout);
         std::cout << std::endl;
     }
 

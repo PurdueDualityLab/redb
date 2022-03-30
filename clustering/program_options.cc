@@ -71,7 +71,7 @@ void ProgramOptions::patch_from_spec_file(const std::string &spec_path) {
     if (spec.contains("corpus_type"))
         this->corpus_type = spec.at("corpus_type").get<CorpusType>();
     this->strict_rex_string_checking = spec.value("strict_rex_string_checking", this->strict_rex_string_checking);
-    if (spec.contains("scorer_type"))
+    if (spec.contains("scorer"))
         this->scorer_type = spec.at("scorer").get<ScorerType>();
     this->top_k_edges = spec.value("top_k_edges", this->top_k_edges);
     if (spec.contains("existing_graph"))
