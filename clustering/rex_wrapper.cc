@@ -27,10 +27,12 @@ std::vector<std::string> RexWrapper::generate_strings(const std::string &pattern
     bool failed = false;
     auto pclose_wrapper = [&failed](FILE *pipe_ptr) {
         int ret = pclose(pipe_ptr);
+        std::cout << "rex exit status: " << ret << std::endl;
         if (ret != 0)
             failed = true;
     };
 
+    /*
     {
         std::unique_ptr<FILE, std::function<void(FILE*)>> pipe(popen(cmd.str().c_str(), "r"), pclose_wrapper);
         if (!pipe) {
@@ -41,8 +43,17 @@ std::vector<std::string> RexWrapper::generate_strings(const std::string &pattern
             rex_output_buffer << buffer.data();
         }
     }
+     */
+    FILE *rex_process = popen(cmd.str().c_str(), "r");
+    if (!rex_process) {
+        throw std::runtime_error("Could not spawn rex process");
+    }
 
-    if (failed)
+    while (fgets(buffer.data(), buffer.size(), rex_process))
+        rex_output_buffer << buffer.data();
+
+    int ret_val = pclose(rex_process);
+    if (ret_val != 0)
         throw std::runtime_error("Rex process failed");
 
     // Parse the output buffer into lines
