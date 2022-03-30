@@ -280,9 +280,7 @@ int main(int argc, char **argv) {
     }
 
     std::string abc_graph;
-    if (ProgramOptions::instance().existing_graph_path)
-        abc_graph = *ProgramOptions::instance().existing_graph_path;
-    else if (ProgramOptions::instance().graph_out)
+    if (ProgramOptions::instance().graph_out)
         abc_graph = table->to_abc(*ProgramOptions::instance().graph_out);
     else
         abc_graph = table->to_abc();
