@@ -48,6 +48,7 @@ public:
 
 private:
     void load_similarity_scores(const std::string &graph_file);
+    unsigned int index_for_scorer(unsigned long id);
 
     std::vector<std::vector<double>> scores;
     std::vector<std::shared_ptr<BaseSimilarityScorer>> scorers;

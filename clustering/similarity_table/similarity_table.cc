@@ -179,13 +179,24 @@ void SimilarityTable::load_similarity_scores(const std::string &graph_file) {
     std::ifstream graph_stream(graph_file);
     std::string line;
     while (std::getline(graph_stream, line)) {
-        int row, col;
+        int row_id, col_id;
         double score;
         // Parse the line
-        if (re2::RE2::FullMatch(line, *abc_parser, &row, &col, &score)) {
+        if (re2::RE2::FullMatch(line, *abc_parser, &row_id, &col_id, &score)) {
             // Load the score
             // TODO consider using checked accessors as we cannot necessarily assume correct code
-            this->scores[row][col] = score;
+            unsigned int row_idx = this->index_for_scorer(row_id);
+            unsigned int col_idx = this->index_for_scorer(col_id);
+            this->scores[row_idx][col_idx] = score;
         }
     }
+}
+
+unsigned int SimilarityTable::index_for_scorer(unsigned long id) {
+    for (unsigned int idx = 0; idx < this->scorers.size(); idx++) {
+        if (this->scorers[idx]->get_id() == id)
+            return idx;
+    }
+
+    throw std::runtime_error("Could not scorer with id " + std::to_string(id));
 }
