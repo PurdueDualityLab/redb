@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 from pydoc import describe
+from tabnanny import check
+import tempfile
 from typing import Dict, List, Tuple
 import subprocess
 import re
@@ -8,7 +10,27 @@ import json
 from argparse import ArgumentParser
 
 
-def main(path_to_cluster_tool: str, path_to_truth_dataset: str, path_to_similarity_graph: str, path_to_spec_file: str):
+class GridSpec:
+    cluster_tool_path: str = ""
+    check_clusters_path: str = ""
+    truth_data_path: str = ""
+    similarity_graph_path: str = ""
+    clustering_spec_file: str = ""
+
+
+def read_spec_file(file_path: str) -> GridSpec:
+    with open(file_path, 'r') as spec_file:
+        obj = json.load(spec_file)
+        spec = GridSpec()
+        spec.cluster_tool_path = obj["cluster_tool"]
+        spec.check_clusters_path = obj["cluster_checker"]
+        spec.truth_data_path = obj["truth_data"]
+        spec.similarity_graph_path = obj["similarity_graph"]
+        spec.clustering_spec_file = obj["clustering_spec"]
+    return spec
+
+
+def main(spec: GridSpec):
     # Do some grid searching
     inflation_params = [x for x in range(1, 6, .25)]
     pruning_params   = [x for x in range(.6, .9, .25)]
@@ -26,23 +48,30 @@ def main(path_to_cluster_tool: str, path_to_truth_dataset: str, path_to_similari
     adj_rand_finder = re.compile(r"Adjusted rand score: ([0-9.]+)")
     score_matrix: Dict[Tuple[float, float, int], Tuple[float, float]] = {}
     for inflation_val, pruning_val, k_val in input_space:
-        invocation = [
-            path_to_cluster_tool,
-            "--existing-graph", path_to_similarity_graph,
-            "-f", path_to_spec_file,
-            "-i", str(inflation_val),
-            "-p", str(pruning_val),
-            "-k", str(k_val),
-            path_to_truth_dataset
-        ]
+        with tempfile.NamedTemporaryFile('rw') as clusters_output_file:
+            invocation = [
+                spec.cluster_tool_path,
+                "--existing-graph", spec.similarity_graph_path,
+                "-f", spec.clustering_spec_file,
+                "-i", str(inflation_val),
+                "-p", str(pruning_val),
+                "-k", str(k_val),
+                "-P", clusters_output_file.name,
+                spec.truth_data_path
+            ]
 
-        # Execute the configuration
-        completed_process = subprocess.run(invocation, check=True, capture_output=True, encoding='utf-8')
-        completed_process.check_returncode()
-        rand_index = rand_finder.search(completed_process.stdout).group(1)
-        adj_rand_index = adj_rand_finder.search(completed_process.stdout).group(1)
+            # Execute the configuration
+            cluster_complete = subprocess.run(invocation, check=True, capture_output=True, encoding='utf-8')
+            cluster_complete.check_returncode()
 
-        score_matrix[(inflation_val, pruning_val, k_val)] = (rand_index, adj_rand_index)
+            # Check the cluster results
+            check_complete = subprocess.run([spec.check_clusters_path, spec.truth_data_path, clusters_output_file.name], check=True, capture_output=True, encoding='utf-8')
+            check_complete.check_returncode()
+
+            rand_index = rand_finder.search(check_complete.stdout).group(1)
+            adj_rand_index = adj_rand_finder.search(check_complete.stdout).group(1)
+
+            score_matrix[(inflation_val, pruning_val, k_val)] = (rand_index, adj_rand_index)
 
     # We have a map of all of the scores. Save them to a file
     with open('grid_search_results.json', 'w') as results_file:
@@ -51,10 +80,8 @@ def main(path_to_cluster_tool: str, path_to_truth_dataset: str, path_to_similari
 
 if __name__ == '__main__':
     parser = ArgumentParser('grid_search.py', description='Try to optimize clustering parameters')
-    parser.add_argument('cluster-tool', help='Path to cluster tool')
-    parser.add_argument('existing-graph', help="Path to existing similarity graph")
-    parser.add_argument('truth-dataset', help="Path to truth dataset")
-    parser.add_argument('spec-file', help="Path to spec file")
+    parser.add_argument('spec_file', help="Spec file that defines the grid search parameters")
 
     args = parser.parse_args()
-    main(args.cluster_tool, args.truth_dataset, args.existing_graph, args.spec_file)
+    spec = read_spec_file(args.spec_file)
+    main(spec)
