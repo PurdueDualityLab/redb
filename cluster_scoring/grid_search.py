@@ -47,6 +47,8 @@ def main(spec: GridSpec):
     rand_finder = re.compile(r"Rand Score: ([0-9.]+)")
     adj_rand_finder = re.compile(r"Adjusted rand score: ([0-9.]+)")
     score_matrix: Dict[Tuple[float, float, int], Tuple[float, float]] = {}
+    current_invocation = 1
+    total_invocations = len(input_space)
     for inflation_val, pruning_val, k_val in input_space:
         with tempfile.NamedTemporaryFile('r+') as clusters_output_file:
             invocation = [
@@ -72,6 +74,8 @@ def main(spec: GridSpec):
             adj_rand_index = adj_rand_finder.search(check_complete.stdout).group(1)
 
             score_matrix[(inflation_val, pruning_val, k_val)] = (rand_index, adj_rand_index)
+        print(f"Finished invocation {current_invocation}/{total_invocations}")
+        current_invocation += 1
 
     # We have a map of all of the scores. Save them to a file
     with open('grid_search_results.json', 'w') as results_file:
