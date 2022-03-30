@@ -63,13 +63,13 @@ def main(spec: GridSpec):
         with tempfile.NamedTemporaryFile('r+') as clusters_output_file:
             invocation = [
                 spec.cluster_tool_path,
-                "--existing-graph", spec.similarity_graph_path,
+                # "--existing-graph", spec.similarity_graph_path,
                 "-f", spec.clustering_spec_file,
                 "-i", str(inflation_val),
                 "-p", str(pruning_val),
                 "-k", str(k_val),
                 "-P", clusters_output_file.name,
-                spec.compatible_patterns if spec.compatible_patterns is not None else spec.truth_data_path
+                spec.truth_data_path
             ]
 
             # Execute the configuration
