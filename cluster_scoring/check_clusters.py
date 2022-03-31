@@ -2,12 +2,9 @@
 
 import argparse
 import collections
-from gc import collect
-from hashlib import algorithms_available
-from socket import CAN_BCM_RX_CHECK_DLC
-from tabnanny import check
-from typing import Dict, List, Set
-
+from typing import Dict, Set
+import numpy as np
+from scipy.misc import comb
 from sklearn.metrics import adjusted_mutual_info_score, rand_score, adjusted_rand_score
 
 import data_prep
@@ -25,6 +22,18 @@ def give_patterns_ids(clusters_map: Dict[int, Set[str]]) -> Dict[str, int]:
         running_pattern_id += 1
     
     return id_map
+
+def manual_rand_index_score(clusters, classes):
+    tp_plus_fp = comb(np.bincount(clusters), 2).sum()
+    tp_plus_fn = comb(np.bincount(classes), 2).sum()
+    A = np.c_[(clusters, classes)]
+    tp = sum(comb(np.bincount(A[A[:, 0] == i, 1]), 2).sum()
+             for i in set(clusters))
+    fp = tp_plus_fp - tp
+    fn = tp_plus_fn - tp
+    tn = comb(len(A), 2) - tp - fp - fn
+    score = (tp + tn) / (tp + fp + fn + tn)
+    return score, (tp, fp, fn, tn)
 
 
 def main(true_path: str, check_path: str):
@@ -68,9 +77,12 @@ def main(true_path: str, check_path: str):
     rscore = rand_score(true_cluster_vector, check_cluster_vector)
     arscore = adjusted_rand_score(true_cluster_vector, check_cluster_vector)
     amiscore = adjusted_mutual_info_score(true_cluster_vector, check_cluster_vector)
+    manual_rscore, intermediate_values = manual_rand_index_score(true_cluster_vector, check_cluster_vector)
     print(f"\n\nRand Score: {rscore}")
     print(f"Adjusted rand score: {arscore}")
     print(f"Adjusted Mutual Information Score: {amiscore}")
+    print(f"Manual rand score: {manual_rscore}")
+    print(f"Intermediate manual rand score values: tp: {intermediate_values[0]}, fp: {intermediate_values[1]}, fn: {intermediate_values[2]}, tn: {intermediate_values[3]}")
 
     print("Vector frequency information")
     true_frequencies = collections.Counter(true_cluster_vector)

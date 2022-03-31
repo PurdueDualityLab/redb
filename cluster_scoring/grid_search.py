@@ -95,6 +95,7 @@ def main(spec: GridSpec):
     score_matrix: Dict[Tuple[float, float, int], Tuple[float, float]] = {}
     current_invocation = 1
     total_invocations = len(input_space)
+    print(f"Beginning search of input space with {total_invocations} entries")
     for inflation_val, pruning_val, k_val in input_space:
         with tempfile.NamedTemporaryFile('r+') as clusters_output_file:
             invocation = [
