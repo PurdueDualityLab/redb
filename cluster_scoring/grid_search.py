@@ -30,7 +30,7 @@ class ParameterRange:
         self.step = step * 10 ** self.exp
 
     def get_values(self):
-        return [x / self.exp for x in range(self.lower, self.upper, self.step)]
+        return [x / (10**self.exp) for x in range(self.lower, self.upper, self.step)]
 
 
 class GridSpec:
