@@ -7,7 +7,6 @@
 [submodule "deps/mongoose"]
 	path = deps/mongoose
 	url = https://github.com/cesanta/mongoose.git
-
 [submodule "deps/egret"]
 	path = deps/egret
-	url = https://github.com/elarsonSU/egret.git
+	url = git@github.com:PurdueDualityLab/egret.git
