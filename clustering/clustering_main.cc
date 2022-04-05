@@ -8,6 +8,7 @@
 #include "db/pattern_reader.h"
 #include "program_options.h"
 #include "similarity_table/egret_similarity_scorer.h"
+#include "feature_matrix/feature_matrix.h"
 
 #include <iostream>
 #include <unordered_map>
@@ -30,6 +31,7 @@ static const struct option program_args[] = {
         { "top-k-edges", required_argument, nullptr, 'k' },
         { "strict-string-checking", no_argument, nullptr, '1' },
         { "existing-graph", required_argument, nullptr, '2' },
+        { "feature-vectors", no_argument, nullptr, '3' },
         { "help", no_argument, nullptr, 'h' },
         { nullptr, 0, nullptr, 0 }
 };
@@ -59,6 +61,8 @@ static void display_help() {
                  "                    is set, then computing the similarity matrix will be skipped. The program will just\n"
                  "                    cluster the existing graph and map the clusters back to patterns. NOTE: you must still\n"
                  "                    provide the corresponding corpus file so that the IDs can be mapped back to the graph.\n";
+    std::cout << "--feature-vectors:  create language approximation vectors instead of doing similarity matrix clustering.\n"
+                 "                    Vectors output file is stored in the result specified by graph out\n";
     std::cout << '\n';
     std::cout << "--strict-string-checking: strictly check for corruptions in rex strings when being loaded and unloaded\n";
     std::cout << "-h, --help:         display this help screen" << std::endl;
@@ -151,6 +155,10 @@ static ProgramOptions read_program_opts(int argc, char **argv) {
                 option_values.existing_graph_path = std::string(optarg);
                 break;
 
+            case '3':
+                option_values.do_feature_vectors = true;
+                break;
+
             default:
                 throw std::runtime_error("Unexpected argument");
         }
@@ -205,6 +213,32 @@ int main(int argc, char **argv) {
             patterns[id++] = std::move(pattern);
         }
     }
+
+    /**
+     * TODO
+     * I should really divide these into different subsystems  where one subsystem is responsible for similarity matrix
+     * clustering and one that's responsible for feature vector clustering. However, until then, if feature vectors
+     * flag is set, then jsut do that.
+     */
+     if (ProgramOptions::instance().do_feature_vectors) {
+         std::vector<std::string> only_patterns;
+         for (const auto &[_, pattern] : patterns) {
+             only_patterns.push_back(pattern);
+         }
+
+         FeatureMatrix feature_matrix(only_patterns);
+
+         if (ProgramOptions::instance().graph_out) {
+             std::ofstream output(*ProgramOptions::instance().graph_out);
+             output << feature_matrix << std::endl;
+         } else {
+             std::cout << feature_matrix << std::endl;
+         }
+
+         // Done
+         return 0;
+     }
+
 
     MclWrapper mcl_wrapper(ProgramOptions::instance().mcl_path);
 

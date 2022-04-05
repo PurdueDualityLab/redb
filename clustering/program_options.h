@@ -56,6 +56,7 @@ public:
             , wine_path("/usr/bin/wine")
             , rex_path("/home/charlie/Downloads/Rex/Rex.exe")
             , mcl_path("/usr/local/bin/mcl")
+            , do_feature_vectors(false)
     {  }
 
     friend std::ostream &operator<<(std::ostream &os, const ProgramOptions &opts);
@@ -78,6 +79,7 @@ public:
     std::string rex_path;
     std::string mcl_path;
     std::optional<std::string> existing_graph_path;
+    bool do_feature_vectors;
 
     static ProgramOptions global_options_instance;
 };
