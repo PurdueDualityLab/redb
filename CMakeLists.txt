@@ -29,7 +29,7 @@ endif()
 add_subdirectory(clustering)
 
 # Add server subdirectory
-# add_subdirectory(server)
+add_subdirectory(server)
 
 # add stuff for google test
 if(NOT SKIP_TESTS)

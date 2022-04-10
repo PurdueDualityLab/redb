@@ -56,7 +56,9 @@ static void display_help() {
     std::cout << "-t, --corpus-type:  how the patterns are represented in the corpus. options are 'objects' or 'pairs'\n"
               << "                    'objects' are json object per line, each object has a pattern kv-pair.\n"
               << "                    'pairs' are id, whitespace then pattern. (default)\n"
-              << "                    'clusters' is a json array of arrays where each subarray is a cluster\n";
+              << "                    'clusters' is a json array of arrays where each subarray is a cluster\n"
+                 "                    'labeled_clusters' is a map of clusters, where each key is a cluster label and its\n"
+                 "                    value is a list of patterns\n";
     std::cout << "--existing-graph:   use a similarity graph that was already used for the given corpus. If this option\n"
                  "                    is set, then computing the similarity matrix will be skipped. The program will just\n"
                  "                    cluster the existing graph and map the clusters back to patterns. NOTE: you must still\n"
@@ -120,6 +122,8 @@ static ProgramOptions read_program_opts(int argc, char **argv) {
                     option_values.corpus_type = CorpusType::PAIRS;
                 } else if (option == "clusters") {
                     option_values.corpus_type = CorpusType::CLUSTERS;
+                } else if (option == "labeled_clusters") {
+                    option_values.corpus_type = CorpusType::LABELED_CLUSTERS;
                 } else {
                     throw std::runtime_error("Invalid corpus type");
                 }
@@ -205,13 +209,15 @@ int main(int argc, char **argv) {
                 patterns[id++] = pattern;
             }
         }
-    } else {
+    } else if (ProgramOptions::instance().corpus_type == CorpusType::OBJECTS) {
         // Load objects
         auto pattern_list = rereuse::db::read_patterns_from_path(ProgramOptions::instance().corpus_file);
         unsigned long id = 0;
         for (auto & pattern : pattern_list) {
             patterns[id++] = std::move(pattern);
         }
+    } else {
+        // It's labeled clusters, so we're probably doing feature vectors...
     }
 
     /**
@@ -221,18 +227,25 @@ int main(int argc, char **argv) {
      * flag is set, then jsut do that.
      */
      if (ProgramOptions::instance().do_feature_vectors) {
-         std::vector<std::string> only_patterns;
-         for (const auto &[_, pattern] : patterns) {
-             only_patterns.push_back(pattern);
-         }
+         std::unique_ptr<FeatureMatrix> feature_matrix;
+         if (ProgramOptions::instance().corpus_type == LABELED_CLUSTERS) {
+             auto labeled_clusters = rereuse::db::read_labeled_clusters_path(ProgramOptions::instance().corpus_file);
+             feature_matrix = std::make_unique<FeatureMatrix>(labeled_clusters);
+         } else {
+             std::vector<std::string> all_patterns;
+             std::transform(patterns.cbegin(), patterns.cend(), std::back_inserter(all_patterns),
+                            [](const std::pair<unsigned long, std::string> &entry) {
+                 return entry.second;
+             });
 
-         FeatureMatrix feature_matrix(only_patterns);
+             feature_matrix = std::make_unique<FeatureMatrix>(all_patterns);
+         }
 
          if (ProgramOptions::instance().graph_out) {
              std::ofstream output(*ProgramOptions::instance().graph_out);
-             output << feature_matrix << std::endl;
+             output << *feature_matrix << std::endl;
          } else {
-             std::cout << feature_matrix << std::endl;
+             std::cout << *feature_matrix << std::endl;
          }
 
          // Done

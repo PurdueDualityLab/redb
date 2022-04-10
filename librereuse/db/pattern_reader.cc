@@ -96,3 +96,14 @@ std::vector<std::unique_ptr<rereuse::db::Cluster>> rereuse::db::read_semantic_cl
 
     return clusters;
 }
+
+std::unordered_map<std::string, std::vector<std::string>> rereuse::db::read_labeled_clusters(std::istream &input_stream) {
+    nlohmann::json obj;
+    input_stream >> obj;
+    return obj;
+}
+
+std::unordered_map<std::string, std::vector<std::string>> rereuse::db::read_labeled_clusters_path(const std::string &file_path) {
+    std::ifstream file(file_path);
+    return read_labeled_clusters(file);
+}

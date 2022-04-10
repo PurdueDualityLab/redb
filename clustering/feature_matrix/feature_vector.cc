@@ -3,10 +3,13 @@
 //
 
 #include "feature_vector.h"
+
+#include <utility>
 #include "../ThreadPool.h"
 #include "../program_options.h"
 
-FeatureVector::FeatureVector(const std::string& pattern, const StringVector &string_vec) {
+FeatureVector::FeatureVector(const std::string& pattern, std::string classification, const StringVector &string_vec)
+: classification(std::move(classification)) {
     // Build the regex
     this->regex = std::make_shared<re2::RE2>(pattern);
     if (!this->regex->ok())

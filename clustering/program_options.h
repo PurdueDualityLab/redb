@@ -16,12 +16,14 @@ enum CorpusType {
     OBJECTS, // json object per line, each object has a pattern key-value pair
     PAIRS, // Each line has an id, whitespace, and then patterns
     CLUSTERS, // json array of arrays. Each subarray is a cluster
+    LABELED_CLUSTERS // like clusters, but each cluster has a label. So, the root object is a map
 };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(CorpusType, {
     { OBJECTS, "objects" },
     { PAIRS, "pairs" },
-    { CLUSTERS, "clusters" }
+    { CLUSTERS, "clusters" },
+    { LABELED_CLUSTERS, "labeled_clusters" }
 })
 
 enum ScorerType {

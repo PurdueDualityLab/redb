@@ -15,7 +15,7 @@ public:
         std::fill(this->match_vector.begin(), this->match_vector.end(), false);
     }
 
-    FeatureVector(const std::string& pattern, const StringVector &string_vec);
+    FeatureVector(const std::string& pattern, std::string classification, const StringVector &string_vec);
 
     const std::vector<bool> &get_match_vector() const {
         return match_vector;
@@ -33,9 +33,14 @@ public:
         return this->regex->pattern();
     }
 
+    const std::string &get_classification() const {
+        return classification;
+    }
+
 private:
     std::shared_ptr<re2::RE2> regex;
     std::vector<bool> match_vector;
+    std::string classification;
 };
 
 

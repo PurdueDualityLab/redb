@@ -27,24 +27,6 @@ static void handle_signal(int sig) {
     std::flush(std::cerr);
 }
 
-static nlohmann::json filter_array_nulls(const nlohmann::json &list) {
-    if (!list.is_array())
-        return list;
-
-    nlohmann::json list_cpy = list;
-
-    // Remove all null values
-    for (auto it = list_cpy.begin(); it != list_cpy.end();) {
-        if (it->is_null()) {
-            it = list_cpy.erase(it);
-        } else {
-            ++it;
-        }
-    }
-
-    return list_cpy;
-}
-
 static std::shared_ptr<rereuse::query::BaseClusterQuery> read_query_from_body(struct mg_str body_string, unsigned int *err_code) {
     std::string body_buffer(body_string.ptr, body_string.len);
     nlohmann::json body_obj;

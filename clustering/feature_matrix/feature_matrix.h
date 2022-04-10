@@ -13,6 +13,7 @@
 class FeatureMatrix {
 public:
     explicit FeatureMatrix(const std::vector<std::string> &patterns);
+    explicit FeatureMatrix(const std::unordered_map<std::string, std::vector<std::string>> &labeled_clusters);
 
     const std::map<std::string, FeatureVector> &get_feature_vectors() const {
         return feature_vectors;
