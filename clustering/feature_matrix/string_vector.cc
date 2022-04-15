@@ -6,6 +6,67 @@
 #include "../ThreadPool.h"
 #include "../program_options.h"
 #include <egret.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+std::vector<std::string> invoke_egret(const std::string &pattern) {
+    int communications[2];
+    int ret = pipe(communications);
+    pid_t pid = fork();
+    if (pid != 0) {
+        // Close the read end
+        close(communications[0]);
+
+        nlohmann::json strings_obj;
+        try {
+            auto strings = run_engine(pattern, "clustering");
+            strings_obj = strings;
+        } catch (std::runtime_error &exe) {
+            strings_obj = std::vector<std::string> {};
+        }
+
+        // Write the data over
+        auto strings_obj_payload = strings_obj.dump();
+        write(communications[1], strings_obj_payload.c_str(), strings_obj_payload.size());
+
+        // Close up everything
+        close(communications[1]);
+
+        exit(0);
+    } else {
+        close(communications[1]);
+
+        // Parent: read the strings back
+        int child_status;
+        waitpid(pid, &child_status, 0);
+
+        if (WIFEXITED(child_status)) {
+            // There was no problem. Read the strings and return them
+            std::stringstream result_buffer;
+            std::array<char, 256> block {0};
+            ssize_t bytes_read = 0;
+            while ((bytes_read = read(communications[0], block.data(), block.size())) > 0) {
+                result_buffer << block.data();
+                block.fill(0);
+            }
+
+            // Read into a json obj
+            nlohmann::json strings_obj;
+            result_buffer >> strings_obj;
+
+            close(communications[0]);
+
+            // Return obj as vector
+            return strings_obj.get<std::vector<std::string>>();
+        } else {
+            // There was an error, so ignore
+            close(communications[0]);
+
+            // Return an empty vector
+            return {};
+        }
+    }
+}
 
 StringVector::StringVector(const std::vector<std::string> &patterns) {
     // Try out using the global workers variable
@@ -15,7 +76,7 @@ StringVector::StringVector(const std::vector<std::string> &patterns) {
     for (const auto &pattern : patterns) {
         auto fut = workers.enqueue([](const std::string &pattern) {
             try {
-                return run_engine(pattern, "clustering");
+                return invoke_egret(pattern);
             } catch (std::runtime_error &exe) {
                 return std::vector<std::string> {};
             }
