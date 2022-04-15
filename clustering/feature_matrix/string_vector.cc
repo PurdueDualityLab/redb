@@ -13,7 +13,7 @@ std::vector<std::string> invoke_egret(const std::string &pattern) {
     int communications[2];
     int ret = pipe(communications);
     pid_t pid = fork();
-    if (pid != 0) {
+    if (pid == 0) {
         // Close the read end
         close(communications[0]);
 
@@ -74,13 +74,7 @@ StringVector::StringVector(const std::vector<std::string> &patterns) {
 
     std::vector<std::future<std::vector<std::string>>> tasks;
     for (const auto &pattern : patterns) {
-        auto fut = workers.enqueue([](const std::string &pattern) {
-            try {
-                return invoke_egret(pattern);
-            } catch (std::runtime_error &exe) {
-                return std::vector<std::string> {};
-            }
-        }, pattern);
+        auto fut = workers.enqueue(invoke_egret, pattern);
 
         tasks.push_back(std::move(fut));
     }
