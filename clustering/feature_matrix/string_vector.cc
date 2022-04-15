@@ -50,14 +50,18 @@ std::vector<std::string> invoke_egret(const std::string &pattern) {
                 block.fill(0);
             }
 
-            // Read into a json obj
-            nlohmann::json strings_obj;
-            result_buffer >> strings_obj;
-
             close(communications[0]);
 
-            // Return obj as vector
-            return strings_obj.get<std::vector<std::string>>();
+            try {
+                // Read into a json obj
+                nlohmann::json strings_obj;
+                result_buffer >> strings_obj;
+
+                // Return obj as vector
+                return strings_obj.get<std::vector<std::string>>();
+            } catch (nlohmann::json::parse_error &exe) {
+                return {};
+            }
         } else {
             // There was an error, so ignore
             close(communications[0]);
