@@ -4,7 +4,8 @@
 
 export const environment = {
   production: false,
-  queryServiceUrl: 'http://localhost:8080'
+  queryServiceUrl: 'http://localhost:8080',
+  analysisServiceUrl: 'http://localhost:8081',
 };
 
 /*

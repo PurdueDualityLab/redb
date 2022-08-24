@@ -14,11 +14,13 @@ const routes: Routes = [
     path: 'home',
     loadChildren: () => import('./home/home.module').then(m => m.HomeModule)
   },
+  { path: 'analyze', loadChildren: () => import('./static-analysis/static-analysis.module').then(m => m.StaticAnalysisModule) },
   {
     path: '',
     pathMatch: 'full',
     redirectTo: '/home'
   },
+  { path: 'rewrite', loadChildren: () => import('./rewrite/rewrite.module').then(m => m.RewriteModule) },
 ];
 
 @NgModule({

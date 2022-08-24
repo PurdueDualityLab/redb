@@ -1,5 +1,5 @@
 
-cmake_minimum_required(VERSION 3.18.4)
+cmake_minimum_required(VERSION 3.16.3)
 project(redb
         VERSION 0.0.0
         DESCRIPTION "Tools for reusing regular expressions")

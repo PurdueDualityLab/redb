@@ -14,9 +14,14 @@ export class HomeComponent implements OnInit {
       routerFragment: '/query'
     },
     {
-      name: 'Some other tool',
-      description: 'Do something else',
-      routerFragment: '/home'
+      name: 'Regex Static Analysis',
+      description: 'Statically analyze some regular expressions',
+      routerFragment: '/analyze'
+    },
+    {
+      name: 'Regex Rewriter',
+      description: 'Rewrite regexes into safter forms (?)',
+      routerFragment: '/rewrite'
     }
   ];
 

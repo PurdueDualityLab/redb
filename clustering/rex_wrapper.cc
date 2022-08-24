@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <memory>
 #include <iostream>
+#include <functional>
 
 std::vector<std::string> RexWrapper::generate_strings(const std::string &pattern, unsigned int count) const {
     // Generate the commandline
